@@ -1,0 +1,543 @@
+{
+  "networks": [],
+  "game_webs": [
+    {
+      "species": [
+        "grass",
+        "shrimp",
+        "crab",
+        "duck"
+      ],
+      "network": "Ythan Estuary",
+      "ref": "Huxham et al. 1992"
+    },
+    {
+      "species": [
+        "seaweed",
+        "snail",
+        "crab",
+        "duck"
+      ],
+      "network": "Ythan Estuary",
+      "ref": "Huxham et al. 1992"
+    },
+    {
+      "species": [
+        "grass",
+        "shrimp",
+        "frog",
+        "snake",
+        "bird"
+      ],
+      "network": "Ythan Estuary",
+      "ref": "Huxham et al. 1992"
+    },
+    {
+      "species": [
+        "seaweed",
+        "shrimp",
+        "crab",
+        "salmon"
+      ],
+      "network": "Ythan Estuary",
+      "ref": "Huxham et al. 1992"
+    },
+    {
+      "species": [
+        "seaweed",
+        "turtle",
+        "crab",
+        "shrimp"
+      ],
+      "network": "Ythan Estuary",
+      "ref": "Huxham et al. 1992"
+    },
+    {
+      "species": [
+        "grass",
+        "carp",
+        "duck",
+        "frog"
+      ],
+      "network": "Tuesday Lake",
+      "ref": "Post et al. 2000"
+    },
+    {
+      "species": [
+        "seaweed",
+        "carp",
+        "shrimp",
+        "frog",
+        "snake"
+      ],
+      "network": "Tuesday Lake",
+      "ref": "Post et al. 2000"
+    },
+    {
+      "species": [
+        "lotus",
+        "carp",
+        "shrimp",
+        "duck",
+        "turtle"
+      ],
+      "network": "Tuesday Lake",
+      "ref": "Post et al. 2000"
+    },
+    {
+      "species": [
+        "seaweed",
+        "shrimp",
+        "frog",
+        "snake",
+        "bird"
+      ],
+      "network": "Tuesday Lake",
+      "ref": "Post et al. 2000"
+    },
+    {
+      "species": [
+        "lotus",
+        "carp",
+        "turtle",
+        "shrimp"
+      ],
+      "network": "Tuesday Lake",
+      "ref": "Post et al. 2000"
+    },
+    {
+      "species": [
+        "grass",
+        "deer",
+        "wolf",
+        "eagle",
+        "bird"
+      ],
+      "network": "Yellowstone",
+      "ref": "Ripple & Beschta 2004"
+    },
+    {
+      "species": [
+        "grass",
+        "rabbit",
+        "fox",
+        "eagle"
+      ],
+      "network": "Yellowstone",
+      "ref": "Ripple & Beschta 2004"
+    },
+    {
+      "species": [
+        "shrub",
+        "rabbit",
+        "fox",
+        "owl"
+      ],
+      "network": "Yellowstone",
+      "ref": "Ripple & Beschta 2004"
+    },
+    {
+      "species": [
+        "grass",
+        "sheep",
+        "wolf",
+        "eagle"
+      ],
+      "network": "Yellowstone",
+      "ref": "Ripple & Beschta 2004"
+    },
+    {
+      "species": [
+        "grass",
+        "deer",
+        "rabbit",
+        "fox",
+        "wolf"
+      ],
+      "network": "Yellowstone",
+      "ref": "Ripple & Beschta 2004"
+    },
+    {
+      "species": [
+        "tree",
+        "deer",
+        "wolf",
+        "owl",
+        "bird"
+      ],
+      "network": "Yellowstone",
+      "ref": "Ripple & Beschta 2004"
+    },
+    {
+      "species": [
+        "seaweed",
+        "shrimp",
+        "crab",
+        "salmon",
+        "eagle"
+      ],
+      "network": "Patagonian shelf",
+      "ref": "Coll et al. 2006"
+    },
+    {
+      "species": [
+        "seaweed",
+        "carp",
+        "salmon",
+        "bird"
+      ],
+      "network": "Patagonian shelf",
+      "ref": "Coll et al. 2006"
+    },
+    {
+      "species": [
+        "lotus",
+        "shrimp",
+        "turtle",
+        "crab"
+      ],
+      "network": "Patagonian shelf",
+      "ref": "Coll et al. 2006"
+    },
+    {
+      "species": [
+        "wheat",
+        "sheep",
+        "chicken",
+        "fox",
+        "owl"
+      ],
+      "network": "UK Farmland",
+      "ref": "Benton et al. 2003"
+    },
+    {
+      "species": [
+        "grass",
+        "cow",
+        "chicken",
+        "fox",
+        "bird"
+      ],
+      "network": "UK Farmland",
+      "ref": "Benton et al. 2003"
+    },
+    {
+      "species": [
+        "wheat",
+        "rabbit",
+        "fox",
+        "owl",
+        "bird"
+      ],
+      "network": "UK Farmland",
+      "ref": "Benton et al. 2003"
+    },
+    {
+      "species": [
+        "grass",
+        "sheep",
+        "cow",
+        "bee",
+        "butterfly"
+      ],
+      "network": "UK Farmland",
+      "ref": "Benton et al. 2003"
+    },
+    {
+      "species": [
+        "flower",
+        "bee",
+        "butterfly",
+        "bird",
+        "fox"
+      ],
+      "network": "UK Farmland",
+      "ref": "Benton et al. 2003"
+    },
+    {
+      "species": [
+        "tree",
+        "deer",
+        "wolf",
+        "owl",
+        "bird"
+      ],
+      "network": "Białowieża Forest",
+      "ref": "Kuijper et al. 2013"
+    },
+    {
+      "species": [
+        "shrub",
+        "rabbit",
+        "fox",
+        "owl"
+      ],
+      "network": "Białowieża Forest",
+      "ref": "Kuijper et al. 2013"
+    },
+    {
+      "species": [
+        "tree",
+        "mushroom",
+        "snail",
+        "bird",
+        "fox"
+      ],
+      "network": "Białowieża Forest",
+      "ref": "Kuijper et al. 2013"
+    },
+    {
+      "species": [
+        "berry",
+        "deer",
+        "fox",
+        "wolf"
+      ],
+      "network": "Białowieża Forest",
+      "ref": "Kuijper et al. 2013"
+    },
+    {
+      "species": [
+        "shrub",
+        "deer",
+        "rabbit",
+        "fox",
+        "wolf"
+      ],
+      "network": "Białowieża Forest",
+      "ref": "Kuijper et al. 2013"
+    },
+    {
+      "species": [
+        "seaweed",
+        "shrimp",
+        "frog",
+        "snake"
+      ],
+      "network": "Broadstone Stream",
+      "ref": "Woodward & Hildrew 2002"
+    },
+    {
+      "species": [
+        "lotus",
+        "shrimp",
+        "frog",
+        "duck"
+      ],
+      "network": "Broadstone Stream",
+      "ref": "Woodward & Hildrew 2002"
+    },
+    {
+      "species": [
+        "seaweed",
+        "snail",
+        "frog",
+        "bird"
+      ],
+      "network": "Broadstone Stream",
+      "ref": "Woodward & Hildrew 2002"
+    },
+    {
+      "species": [
+        "lotus",
+        "carp",
+        "shrimp",
+        "frog",
+        "snake"
+      ],
+      "network": "Broadstone Stream",
+      "ref": "Woodward & Hildrew 2002"
+    },
+    {
+      "species": [
+        "seaweed",
+        "shrimp",
+        "carp",
+        "frog"
+      ],
+      "network": "Skipwith Pond",
+      "ref": "Warren 1989"
+    },
+    {
+      "species": [
+        "lotus",
+        "shrimp",
+        "duck",
+        "frog",
+        "snake"
+      ],
+      "network": "Skipwith Pond",
+      "ref": "Warren 1989"
+    },
+    {
+      "species": [
+        "grass",
+        "bee",
+        "butterfly",
+        "bird",
+        "spider"
+      ],
+      "network": "Silwood Park",
+      "ref": "Memmott et al. 2000"
+    },
+    {
+      "species": [
+        "flower",
+        "bee",
+        "butterfly",
+        "bird"
+      ],
+      "network": "Silwood Park",
+      "ref": "Memmott et al. 2000"
+    },
+    {
+      "species": [
+        "shrub",
+        "bee",
+        "bird",
+        "fox"
+      ],
+      "network": "Silwood Park",
+      "ref": "Memmott et al. 2000"
+    },
+    {
+      "species": [
+        "shrub",
+        "rabbit",
+        "snake",
+        "owl",
+        "eagle"
+      ],
+      "network": "Coachella Valley",
+      "ref": "Polis 1991"
+    },
+    {
+      "species": [
+        "cactus",
+        "rabbit",
+        "snake",
+        "owl"
+      ],
+      "network": "Coachella Valley",
+      "ref": "Polis 1991"
+    },
+    {
+      "species": [
+        "shrub",
+        "cactus",
+        "rabbit",
+        "fox",
+        "snake",
+        "owl"
+      ],
+      "network": "Coachella Valley",
+      "ref": "Polis 1991"
+    },
+    {
+      "species": [
+        "flower",
+        "bee",
+        "bird",
+        "snake",
+        "eagle"
+      ],
+      "network": "St. Martin Island",
+      "ref": "Goldwasser & Roughgarden 1993"
+    },
+    {
+      "species": [
+        "grass",
+        "rabbit",
+        "snake",
+        "bird",
+        "eagle"
+      ],
+      "network": "St. Martin Island",
+      "ref": "Goldwasser & Roughgarden 1993"
+    },
+    {
+      "species": [
+        "deer",
+        "fox",
+        "rabbit",
+        "wolf"
+      ],
+      "network": "Yellowstone NP",
+      "ref": "GBIF occurrence data (US)"
+    },
+    {
+      "species": [
+        "bird",
+        "eagle",
+        "fox",
+        "rabbit"
+      ],
+      "network": "UK Countryside",
+      "ref": "GBIF occurrence data (GB)"
+    },
+    {
+      "species": [
+        "eagle",
+        "fox",
+        "goat",
+        "sheep",
+        "snake"
+      ],
+      "network": "Mediterranean Coast",
+      "ref": "GBIF occurrence data (ES)"
+    },
+    {
+      "species": [
+        "sheep",
+        "snake"
+      ],
+      "network": "Mediterranean Coast",
+      "ref": "GBIF occurrence data (ES)"
+    },
+    {
+      "species": [
+        "horse",
+        "wolf"
+      ],
+      "network": "East Africa",
+      "ref": "GBIF occurrence data (KE)"
+    }
+  ],
+  "total_subsets": 48,
+  "species_coverage": {
+    "bird": 17,
+    "fox": 16,
+    "shrimp": 15,
+    "snake": 13,
+    "rabbit": 12,
+    "grass": 11,
+    "seaweed": 10,
+    "frog": 10,
+    "wolf": 9,
+    "eagle": 9,
+    "owl": 9,
+    "carp": 7,
+    "deer": 7,
+    "crab": 6,
+    "duck": 6,
+    "lotus": 6,
+    "shrub": 6,
+    "bee": 6,
+    "sheep": 5,
+    "turtle": 4,
+    "butterfly": 4,
+    "snail": 3,
+    "salmon": 3,
+    "tree": 3,
+    "flower": 3,
+    "wheat": 2,
+    "chicken": 2,
+    "cow": 2,
+    "cactus": 2,
+    "mushroom": 1,
+    "berry": 1,
+    "spider": 1,
+    "goat": 1,
+    "horse": 1
+  }
+}

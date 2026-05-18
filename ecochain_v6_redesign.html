@@ -1,0 +1,2881 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌿 EcoChain — 生態鏈養成遊戲</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* ── Core palette: warm slate + cream + teal accent ── */
+  --bg:       #f4f2ee;
+  --surface:  #ffffff;
+  --surface2: #faf9f7;
+  --border:   #e4e0d8;
+  --border2:  #d5d0c8;
+
+  /* text */
+  --text:     #1e1c1a;
+  --text2:    #5c5752;
+  --text3:    #9a948d;
+
+  /* accent: teal */
+  --accent:   #1a7f6e;
+  --accent2:  #25a08c;
+  --accentbg: #e8f5f2;
+  --accentbg2:#d0ede8;
+
+  /* gold / coin */
+  --gold:     #b45309;
+  --goldbg:   #fef3c7;
+  --goldbr:   #fde68a;
+
+  /* status */
+  --good:     #059669;
+  --goodbg:   #d1fae5;
+  --warn:     #d97706;
+  --warnbg:   #fef3c7;
+  --bad:      #dc2626;
+  --badbg:    #fee2e2;
+  --info:     #2563eb;
+  --infobg:   #dbeafe;
+
+  /* sky */
+  --sky:      #0891b2;
+  --skybg:    #e0f7ff;
+
+  --radius:   14px;
+  --radius-sm: 9px;
+  --shadow:   0 1px 4px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.08);
+}
+
+body{
+  font-family:sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ══════════════════════════════════════════
+   TOPBAR — slim, full width, dark slate
+══════════════════════════════════════════ */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;gap:12px;
+  background:#1e1c1a;
+  color:#fff;
+  padding:0 20px;
+  height:52px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.logo{
+  font-family:'Sora',sans-serif;
+  font-size:16px;font-weight:800;
+  color:#fff;letter-spacing:-.3px;
+  white-space:nowrap;
+  display:flex;align-items:center;gap:6px;
+}
+.logo-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--accent2);
+  box-shadow:0 0 8px var(--accent2);
+  animation:pulse 2s ease infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.coin-block{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:8px;
+  padding:4px 10px;
+  white-space:nowrap;
+}
+.coin-val{font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:#fbbf24;}
+.gps-val{font-size:10px;color:rgba(255,255,255,.55);font-weight:600;}
+
+.eco-wrap{flex:1;min-width:140px;max-width:240px;}
+.eco-lbl{font-size:10px;font-weight:600;color:rgba(255,255,255,.55);margin-bottom:4px;display:flex;justify-content:space-between;}
+.eco-lbl strong{color:#fff;font-weight:700;}
+.eco-track{height:6px;background:rgba(255,255,255,.12);border-radius:99px;overflow:hidden;}
+.eco-fill{height:100%;border-radius:99px;transition:width .7s,background .5s;}
+
+.season-badge{
+  font-size:11px;font-weight:700;
+  padding:3px 10px;border-radius:6px;
+  white-space:nowrap;
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.15);
+}
+
+.top-btns{display:flex;gap:4px;flex-wrap:wrap;}
+.tbtn{
+  font-size:10px;font-weight:700;
+  padding:4px 10px;border-radius:7px;
+  border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.08);
+  color:rgba(255,255,255,.8);
+  cursor:pointer;font-family:sans-serif;
+  transition:all .15s;white-space:nowrap;
+}
+.tbtn:hover{background:rgba(255,255,255,.16);color:#fff;}
+.tbtn.danger{border-color:rgba(239,68,68,.4);color:rgba(239,68,68,.8);}
+.tbtn.danger:hover{background:rgba(239,68,68,.15);color:#ef4444;}
+.tbtn.gold{border-color:rgba(251,191,36,.3);color:#fbbf24;}
+.tbtn.gold:hover{background:rgba(251,191,36,.15);}
+
+#apiStatus{font-size:9px;font-weight:700;white-space:nowrap;opacity:.7;}
+
+/* ══════════════════════════════════════════
+   MAIN LAYOUT — full width, 3 col
+══════════════════════════════════════════ */
+.wrap{
+  display:grid;
+  grid-template-columns:300px 1fr 260px;
+  grid-template-rows:auto 1fr;
+  min-height:calc(100vh - 52px);
+  gap:0;
+}
+
+/* ── STATS BAR ── */
+.stats-bar{
+  grid-column:1/-1;
+  display:flex;gap:0;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0 20px;
+}
+.stat-item{
+  display:flex;align-items:center;gap:7px;
+  padding:10px 16px;
+  border-right:1px solid var(--border);
+  transition:background .15s;
+}
+.stat-item:last-child{border-right:none;}
+.stat-item:hover{background:var(--surface2);}
+.stat-num{font-family:'Sora',sans-serif;font-size:18px;font-weight:800;color:var(--text);}
+.stat-lbl{font-size:10px;color:var(--text3);font-weight:600;white-space:nowrap;}
+
+/* EVENT BAR */
+.event-bar{
+  grid-column:1/-1;
+  padding:8px 20px;font-size:12px;font-weight:600;
+  border-bottom:1px solid var(--border);
+  display:none;
+}
+.ev-good{background:#d1fae5;color:#065f46;}
+.ev-bad{background:#fee2e2;color:#991b1b;}
+.ev-info{background:#dbeafe;color:#1e40af;}
+
+/* ══════════════════════════════════════════
+   LEFT SIDEBAR — Land Grid
+══════════════════════════════════════════ */
+.left-col{
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.col-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px 10px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.col-title{
+  font-family:'Sora',sans-serif;
+  font-size:13px;font-weight:700;color:var(--text);
+  display:flex;align-items:center;gap:6px;
+}
+.col-title-sub{font-size:10px;color:var(--text3);font-weight:500;}
+.sel-hint{
+  font-size:10px;font-weight:600;
+  color:var(--accent);background:var(--accentbg);
+  padding:3px 9px;border-radius:6px;border:1px solid var(--accentbg2);
+}
+.sel-bar{
+  font-size:11px;font-weight:600;color:var(--accent);
+  background:var(--accentbg);padding:6px 12px;
+  border-bottom:1px solid var(--accentbg2);
+  display:none;flex-shrink:0;
+}
+
+.lgrid-wrap{flex:1;overflow-y:auto;padding:12px;}
+.lgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+
+.cell{
+  aspect-ratio:1;border-radius:10px;
+  border:1.5px solid var(--border);
+  background:var(--surface2);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;transition:transform .12s,border-color .15s,box-shadow .15s;
+  position:relative;overflow:visible;user-select:none;
+}
+.cell:hover{transform:scale(1.1);z-index:4;border-color:var(--accent2);box-shadow:0 2px 8px rgba(26,127,110,.2);}
+.cell.ec{background:var(--bg);}
+.cell.ec:hover{background:var(--accentbg);}
+.cell.pc{background:linear-gradient(135deg,#c8eefb,#90d8ef);border-color:var(--sky)!important;}
+.cell.hl{border-color:#fbbf24!important;box-shadow:0 0 0 2px #fef3c7;}
+.cem{font-size:18px;line-height:1.1;}
+.cnm{font-size:6px;font-weight:700;color:var(--text3);text-align:center;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:0 1px;margin-top:1px;}
+.cplus{font-size:14px;color:var(--border2);font-weight:700;}
+.ctip{
+  display:none;position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);
+  background:rgba(30,28,26,.92);color:#fff;font-size:9px;font-weight:600;border-radius:7px;
+  padding:4px 9px;white-space:nowrap;z-index:99;pointer-events:none;line-height:1.5;
+}
+.cell:hover .ctip{display:block;}
+
+/* coin pop */
+.coinpop{
+  position:absolute;font-size:11px;font-weight:800;color:var(--gold);
+  pointer-events:none;animation:floatup .9s ease forwards;z-index:50;white-space:nowrap;
+}
+@keyframes floatup{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-28px)}}
+
+/* ══════════════════════════════════════════
+   CENTER — Graph + Eco info
+══════════════════════════════════════════ */
+.center-col{
+  background:var(--bg);
+  overflow-y:auto;
+  padding:16px;
+  display:flex;flex-direction:column;gap:12px;
+}
+
+/* ══════════════════════════════════════════
+   RIGHT SIDEBAR
+══════════════════════════════════════════ */
+.right-col{
+  background:var(--surface);
+  border-left:1px solid var(--border);
+  overflow-y:auto;
+  display:flex;flex-direction:column;
+}
+
+/* ══════════════════════════════════════════
+   CARDS (used in center & right)
+══════════════════════════════════════════ */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-sm);
+  overflow:hidden;
+}
+.card-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px 10px;
+  border-bottom:1px solid var(--border);
+}
+.card-title{
+  font-family:'Sora',sans-serif;
+  font-size:12px;font-weight:700;color:var(--text);
+  display:flex;align-items:center;gap:5px;
+}
+.card-badge{
+  font-size:8.5px;font-weight:700;
+  padding:2px 7px;border-radius:5px;
+  background:var(--infobg);color:var(--info);
+}
+.card-body{padding:12px 14px;}
+
+/* GRAPH CARD */
+.graph-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;
+}
+#ecoCanvas{
+  width:100%;display:block;
+  background:var(--bg);
+}
+
+/* ══════════════════════════════════════════
+   SHOP (right sidebar)
+══════════════════════════════════════════ */
+.shop-section{padding:12px 14px;}
+.shop-tabs{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:10px;}
+.tab{
+  font-size:9.5px;font-weight:700;
+  padding:4px 8px;border-radius:6px;cursor:pointer;
+  background:var(--surface2);color:var(--text2);
+  border:1px solid var(--border);transition:all .12s;
+}
+.tab.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+.tab:hover:not(.on){background:var(--accentbg);border-color:var(--accent2);color:var(--accent);}
+
+.slist{display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto;padding-right:2px;}
+.slist::-webkit-scrollbar{width:4px;}
+.slist::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+
+.si{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 9px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);cursor:pointer;
+  background:var(--surface2);transition:all .12s;
+}
+.si:hover{border-color:var(--accent2);background:var(--accentbg);}
+.si.on{border-color:var(--accent)!important;background:var(--accentbg)!important;box-shadow:0 0 0 2px rgba(26,127,110,.15);}
+.si.locked{opacity:.35;cursor:not-allowed;}
+.si-em{font-size:20px;width:26px;text-align:center;flex-shrink:0;}
+.si-info{flex:1;min-width:0;}
+.si-name{font-size:11.5px;font-weight:700;color:var(--text);}
+.si-desc{font-size:9px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.si-price{font-size:11px;font-weight:800;color:var(--gold);white-space:nowrap;}
+
+/* ══════════════════════════════════════════
+   GNN PANELS
+══════════════════════════════════════════ */
+.panel-section{
+  padding:12px 14px;
+  border-top:1px solid var(--border);
+}
+.panel-title{
+  font-family:'Sora',sans-serif;
+  font-size:12px;font-weight:700;color:var(--text);
+  margin-bottom:8px;
+  display:flex;align-items:center;gap:5px;justify-content:space-between;
+}
+
+.gnn-row{display:flex;align-items:flex-start;gap:5px;margin-bottom:3px;font-size:10.5px;line-height:1.5;}
+.gnn-msg{flex:1;color:var(--text2);}
+.badge{font-size:8.5px;font-weight:700;padding:2px 6px;border-radius:5px;white-space:nowrap;flex-shrink:0;}
+.bg{background:#d1fae5;color:#065f46;}
+.bw{background:var(--warnbg);color:var(--warn);}
+.bb{background:var(--badbg);color:var(--bad);}
+
+/* REC cards */
+.rec-item{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:7px 9px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);
+  background:var(--surface2);
+  cursor:pointer;transition:all .12s;
+  margin-bottom:5px;
+}
+.rec-item:hover{border-color:var(--accent2);background:var(--accentbg);}
+
+/* ══════════════════════════════════════════
+   UPGRADES & ACHIEVEMENTS
+══════════════════════════════════════════ */
+.upgrade-item{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 9px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);
+  background:var(--surface2);
+  margin-bottom:4px;
+}
+.upgrade-item.bought{background:var(--accentbg);border-color:var(--accentbg2);}
+.upgrade-item.available{background:var(--goldbg);border-color:var(--goldbr);}
+
+.ach{
+  display:flex;align-items:center;gap:7px;
+  padding:6px 9px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);
+  background:var(--surface2);
+  font-size:10px;font-weight:600;color:var(--text);
+  margin-bottom:3px;
+}
+.ach.locked{opacity:.35;background:var(--bg);}
+.ach.unlocked{background:var(--accentbg);border-color:var(--accentbg2);color:var(--accent);}
+
+/* ══════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════ */
+.overlay{
+  position:fixed;inset:0;
+  background:rgba(15,13,11,.55);
+  display:flex;align-items:center;justify-content:center;
+  z-index:300;padding:16px;
+  backdrop-filter:blur(4px);
+}
+.modal{
+  background:var(--surface);
+  border-radius:18px;padding:22px;
+  width:100%;max-width:320px;
+  border:1px solid var(--border);
+  box-shadow:0 8px 48px rgba(0,0,0,.2);
+}
+.modal-title{
+  font-family:'Sora',sans-serif;
+  font-size:16px;font-weight:700;color:var(--text);
+  margin-bottom:14px;
+}
+.modal-em{font-size:42px;text-align:center;margin-bottom:12px;}
+.flabel{font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px;}
+.modal input,.modal select{
+  width:100%;padding:8px 12px;border-radius:var(--radius-sm);
+  border:1.5px solid var(--border);
+  font-size:13px;font-family:sans-serif;
+  background:var(--surface2);color:var(--text);
+  margin-bottom:10px;outline:none;transition:border-color .15s;
+}
+.modal input:focus,.modal select:focus{border-color:var(--accent2);}
+.mbtns{display:flex;gap:8px;margin-top:4px;}
+.mbtn{
+  flex:1;padding:9px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);font-size:13px;
+  font-weight:700;font-family:sans-serif;cursor:pointer;
+  transition:all .12s;
+}
+.mbtn-cancel{background:var(--surface2);color:var(--text2);}
+.mbtn-cancel:hover{background:var(--bg);}
+.mbtn-ok{background:var(--accent);color:#fff;border-color:var(--accent);}
+.mbtn-ok:hover{background:var(--accent2);}
+.mbtn-rm{background:var(--badbg);color:var(--bad);border-color:#fca5a5;}
+.mbtn-rm:hover{background:#fecaca;}
+
+/* ══════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════ */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(60px);
+  background:#1e1c1a;color:#fff;
+  font-size:13px;font-weight:600;
+  font-family:sans-serif;
+  padding:10px 20px;border-radius:12px;
+  z-index:500;opacity:0;transition:all .3s;
+  pointer-events:none;white-space:nowrap;
+  box-shadow:0 4px 24px rgba(0,0,0,.3);
+  border:1px solid rgba(255,255,255,.1);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ══════════════════════════════════════════
+   SCROLLBARS
+══════════════════════════════════════════ */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+
+/* ══════════════════════════════════════════
+   DIVIDER
+══════════════════════════════════════════ */
+.divider{height:1px;background:var(--border);margin:0;}
+
+/* ══════════════════════════════════════════
+   ACTION BUTTON
+══════════════════════════════════════════ */
+.action-btn{
+  display:block;width:100%;padding:8px;
+  border-radius:var(--radius-sm);
+  border:1px solid var(--accent);
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;font-size:11px;font-weight:700;
+  font-family:sans-serif;
+  cursor:pointer;text-align:center;
+  transition:opacity .15s;
+}
+.action-btn:hover{opacity:.9;}
+
+/* progress bars used in GNN */
+.pbar-wrap{height:5px;background:var(--border);border-radius:99px;overflow:hidden;}
+.pbar-fill{height:100%;border-radius:99px;transition:width .6s;}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-dot"></div>
+    🌿 EcoChain
+  </div>
+
+  <div class="coin-block">
+    <span style="font-size:18px">🪙</span>
+    <div>
+      <div class="coin-val" id="coinVal">120</div>
+      <div class="gps-val">+<span id="gpsVal">2.0</span>/秒</div>
+    </div>
+  </div>
+
+  <div class="eco-wrap">
+    <div class="eco-lbl">
+      <span>🧠 GNN 生態健康度</span>
+      <strong><span id="ecoScoreTop">10</span>/100</strong>
+    </div>
+    <div class="eco-track">
+      <div class="eco-fill" id="ecoFill" style="width:10%;background:var(--bad)"></div>
+    </div>
+  </div>
+
+  <div class="season-badge" id="seasonBadge">🌱 春季</div>
+
+  <div class="top-btns">
+    <button class="tbtn" onclick="openSaveModal()">💾 存檔</button>
+    <button class="tbtn" onclick="openLoadModal()">📂 讀檔</button>
+    <button class="tbtn" onclick="openEncyc()">📖 百科</button>
+    <button class="tbtn" onclick="openMarket()">🛒 市場</button>
+    <button class="tbtn gold" onclick="openLeaderboard()">🏆 排行</button>
+    <button class="tbtn" id="darkBtn" onclick="toggleDark()">🌙 深色</button>
+    <button class="tbtn danger" onclick="resetGame()">🔄 重置</button>
+  </div>
+
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+    <span id="apiStatus" style="font-size:10px;font-weight:700;white-space:nowrap;padding:2px 8px;border-radius:6px;background:rgba(220,38,38,.2);color:#fca5a5;border:1px solid rgba(220,38,38,.3);">🔴 後端離線</span>
+    <span style="font-size:9px;color:rgba(255,255,255,.3);white-space:nowrap;">SDG 14/15 · GNN</span>
+  </div>
+</div>
+
+<!-- WRAP: 3-column full-height grid -->
+<div class="wrap">
+
+  <!-- STATS BAR (full-width) -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div>
+        <div class="stat-num" id="statPlants">0</div>
+        <div class="stat-lbl">🌿 植物</div>
+      </div>
+    </div>
+    <div class="stat-item">
+      <div>
+        <div class="stat-num" id="statHerb">0</div>
+        <div class="stat-lbl">🐑 草食</div>
+      </div>
+    </div>
+    <div class="stat-item">
+      <div>
+        <div class="stat-num" id="statPred">0</div>
+        <div class="stat-lbl">🦅 肉食</div>
+      </div>
+    </div>
+    <div class="stat-item">
+      <div>
+        <div class="stat-num" id="statAqua">0</div>
+        <div class="stat-lbl">🐟 水生</div>
+      </div>
+    </div>
+    <div class="stat-item">
+      <div>
+        <div class="stat-num" id="statTotal">0</div>
+        <div class="stat-lbl">🧬 物種</div>
+      </div>
+    </div>
+    <div class="stat-item" style="margin-left:auto">
+      <div>
+        <div class="stat-num" id="statEarned" style="color:var(--gold)">0</div>
+        <div class="stat-lbl">💰 總收益</div>
+      </div>
+    </div>
+    <!-- event bar inline -->
+    <div class="event-bar" id="eventBar" style="display:none;padding:10px 14px;align-self:center;border-radius:8px;margin-left:8px;"></div>
+  </div>
+
+  <!-- LEFT: Land Grid -->
+  <div class="left-col">
+    <div class="col-head">
+      <div class="col-title">
+        🗺️ 你的草地
+        <span class="col-title-sub">（35 格）</span>
+      </div>
+      <div class="sel-hint" id="hintBar">在右側商店選物種</div>
+    </div>
+    <div class="sel-bar" id="selBar">✅ 已選：<span id="selName"></span>（🪙<span id="selCost"></span>）— 點空格放置</div>
+    <div class="lgrid-wrap">
+      <div class="lgrid" id="landGrid"></div>
+    </div>
+  </div>
+
+  <!-- CENTER: Graph + Analysis -->
+  <div class="center-col">
+
+    <!-- ECO GRAPH -->
+    <div class="graph-card">
+      <div class="card-head">
+        <div class="card-title">🕸️ GNN 生態關係圖</div>
+        <div style="font-size:9px;color:var(--text3)">節點=物種 · 邊色=捕食/共生/授粉</div>
+      </div>
+      <canvas id="ecoCanvas" width="420" height="300"></canvas>
+    </div>
+
+    <!-- GNN ANALYSIS -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">🧠 GNN 分析 <span class="card-badge" id="gnnBadge">⏳ 連線中</span></div>
+      </div>
+      <div class="card-body">
+        <div id="gnnOut" style="font-size:11px;color:var(--text3);line-height:1.7">放置生物後 GNN 即時分析...</div>
+        <div style="margin-top:10px">
+          <button class="action-btn" onclick="runImportance()">🔬 分析物種關鍵程度</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- IMPORTANCE PANEL -->
+    <div class="card" id="importancePanel" style="display:none">
+      <div class="card-head">
+        <div class="card-title">🔬 生態重要性</div>
+        <button onclick="runImportance()" style="font-size:9px;font-weight:700;padding:3px 10px;border-radius:6px;border:1px solid var(--accent);background:var(--accentbg);color:var(--accent);cursor:pointer;">重新分析</button>
+      </div>
+      <div class="card-body">
+        <div id="importanceOut" style="font-size:10.5px;color:var(--text2)">點擊「重新分析」查看每個物種的關鍵程度</div>
+      </div>
+    </div>
+
+    <!-- GNN REC -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">💡 GNN 購買推薦</div>
+        <div style="font-size:8.5px;color:var(--text3)">基於 1,300+ 筆真實食物網（Mangal）</div>
+      </div>
+      <div class="card-body">
+        <div id="gnnRec" style="font-size:10.5px;color:var(--text3);line-height:1.8">分析中...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Shop + Panels -->
+  <div class="right-col">
+
+    <!-- SHOP -->
+    <div class="shop-section">
+      <div class="panel-title" style="margin-bottom:10px;">🛒 商店</div>
+      <div class="shop-tabs" id="tabsEl"></div>
+      <div class="slist" id="shopList"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- UPGRADES -->
+    <div class="panel-section">
+      <div class="panel-title">⬆️ 土地升級</div>
+      <div id="upgradeList"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ACHIEVEMENTS -->
+    <div class="panel-section">
+      <div class="panel-title">🏆 成就</div>
+      <div id="achList"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- EVENT LOG -->
+    <div class="panel-section">
+      <div class="panel-title">📋 事件日誌</div>
+      <div id="logList" style="max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;font-size:10px;color:var(--text2);"></div>
+    </div>
+
+  </div>
+
+</div><!-- wrap -->
+
+<!-- PLACE MODAL -->
+<div class="overlay" id="placeModal" style="display:none">
+  <div class="modal">
+    <div class="modal-title" id="pmTitle">放置生物</div>
+    <div class="modal-em" id="pmEmoji">🐑</div>
+    <label class="flabel">幫牠取個名字</label>
+    <input id="pmName" placeholder="例如：棉花、豆豆..." maxlength="8">
+    <label class="flabel">選擇外觀</label>
+    <select id="pmPattern"></select>
+    <div class="mbtns">
+      <button class="mbtn mbtn-cancel" id="pmCancel">取消</button>
+      <button class="mbtn mbtn-ok" id="pmOk">確認放置 ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- REMOVE MODAL -->
+<div class="overlay" id="rmModal" style="display:none">
+  <div class="modal">
+    <div class="modal-title">管理生物</div>
+    <div class="modal-em" id="rmEmoji"></div>
+    <div style="text-align:center;font-size:16px;font-weight:700;margin-bottom:3px" id="rmName"></div>
+    <div style="text-align:center;font-size:11px;color:var(--text3);margin-bottom:3px" id="rmRole"></div>
+    <div style="text-align:center;font-size:11px;color:var(--text3);margin-bottom:12px" id="rmDesc"></div>
+    <div class="mbtns">
+      <button class="mbtn mbtn-cancel" id="rmClose">關閉</button>
+      <button class="mbtn mbtn-rm" id="rmDo">移除（退 50%）</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ENCYCLOPEDIA MODAL -->
+<div class="overlay" id="encycModal" style="display:none">
+  <div class="modal" style="max-width:520px;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="modal-title" style="margin:0">📖 物種百科</div>
+      <button onclick="document.getElementById('encycModal').style.display='none'" style="font-size:18px;background:none;border:none;cursor:pointer;color:var(--text3)">✕</button>
+    </div>
+    <div class="shop-tabs" id="encycTabs" style="margin-bottom:10px"></div>
+    <div id="encycContent"></div>
+  </div>
+</div>
+
+<!-- INFO MODAL -->
+<div class="overlay" id="infoModal" style="display:none">
+  <div class="modal" style="max-width:340px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="modal-title" style="margin:0" id="infoTitle">生物資訊</div>
+      <button onclick="document.getElementById('infoModal').style.display='none'" style="font-size:18px;background:none;border:none;cursor:pointer;color:var(--text3)">✕</button>
+    </div>
+    <div class="modal-em" id="infoEmoji"></div>
+    <div id="infoBody" style="font-size:12px;line-height:1.8;color:var(--text)"></div>
+    <div class="mbtns" style="margin-top:14px">
+      <button class="mbtn mbtn-cancel" onclick="document.getElementById('infoModal').style.display='none'">關閉</button>
+      <button class="mbtn mbtn-rm" id="infoDel">移除（退 50%）</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Remap legacy CSS variables to new ones for JS compatibility
+// (JS code that writes to --g2, --g3, --g5 etc need mapping)
+(function(){
+  var r=document.documentElement.style;
+  // These are referenced by the dark mode toggle and some dynamic JS
+  // We keep them as aliases pointing to our new vars via initial values
+})();
+</script>
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// ── BACKEND API INTEGRATION ──────────────────────────────────────────────────
+// Change BACKEND_URL to your Render deployment URL after deploying.
+// While developing locally: run `uvicorn main:app` and use http://localhost:8000
+// ═══════════════════════════════════════════════════════════════════════════════
+//var BACKEND_URL = 'https://YOUR-APP.onrender.com'; // ← change this after deploy
+var BACKEND_URL = 'http://localhost:8000';
+
+// ── Crypto helpers ────────────────────────────────────────────────────────────
+// Uses Web Crypto API (SHA-256) instead of djb2.
+// SHA-256 hex is sent to backend, which re-hashes with slot_id as salt.
+async function sha256hex(str) {
+  var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+}
+
+// ── Session Token Manager ─────────────────────────────────────────────────────
+// Tokens are per-slot, HMAC-signed by backend.
+// Stored in localStorage as 'ecochain_tokens' → { slotId: token }
+// All /save and /load requests carry Authorization: Bearer <token>.
+
+var _tokenCache = (function() {
+  try { return JSON.parse(localStorage.getItem('ecochain_tokens') || '{}'); }
+  catch(e) { return {}; }
+})();
+
+function _saveTokenCache() {
+  localStorage.setItem('ecochain_tokens', JSON.stringify(_tokenCache));
+}
+
+function getTokenForSlot(slotId) {
+  return _tokenCache[slotId] || null;
+}
+
+function storeToken(slotId, token) {
+  _tokenCache[slotId] = token;
+  _saveTokenCache();
+}
+
+function removeToken(slotId) {
+  delete _tokenCache[slotId];
+  _saveTokenCache();
+}
+
+// Register a brand-new account on the backend
+// Returns { token, slot_id } or null on failure
+async function registerAccount(slotId, playerName, password) {
+  if (!apiOnline) return null;
+  try {
+    var pwHash = await sha256hex(password);
+    var r = await fetch(BACKEND_URL + '/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slot_id: slotId, player_name: playerName, password_hash: pwHash }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!r.ok) {
+      var err = await r.json().catch(function(){ return {}; });
+      return { error: err.detail || r.status };
+    }
+    var data = await r.json();
+    if (data.token) { storeToken(slotId, data.token); }
+    return data;
+  } catch(e) { return null; }
+}
+
+// Login to existing account — returns { token, slot_id } or null
+async function loginAccount(slotId, password) {
+  if (!apiOnline) return null;
+  try {
+    var pwHash = await sha256hex(password);
+    var r = await fetch(BACKEND_URL + '/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slot_id: slotId, password_hash: pwHash }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!r.ok) return null;
+    var data = await r.json();
+    if (data.token) { storeToken(slotId, data.token); }
+    return data;
+  } catch(e) { return null; }
+}
+
+// Delete account on backend (requires valid token + password)
+async function deleteAccountRemote(slotId, password) {
+  if (!apiOnline) return false;
+  try {
+    var token = getTokenForSlot(slotId);
+    if (!token) {
+      // need to re-login first
+      var loginResult = await loginAccount(slotId, password);
+      if (!loginResult) return false;
+      token = loginResult.token;
+    }
+    var pwHash = await sha256hex(password);
+    var r = await fetch(BACKEND_URL + '/auth/account', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ password_hash: pwHash }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (r.ok) { removeToken(slotId); }
+    return r.ok;
+  } catch(e) { return false; }
+}
+
+// Get auth headers; if token missing try to fetch via loginAccount (but we need password for that,
+// so we just return empty headers — caller must handle 401 by re-prompting)
+async function authHeaders(slotId) {
+  var token = getTokenForSlot(slotId);
+  if (!token) return { 'Content-Type': 'application/json' };
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+}
+
+// Legacy PLAYER_ID kept for backward compat with GNN analyze (no auth needed there)
+var PLAYER_ID = localStorage.getItem('ecochain_player_id');
+if (!PLAYER_ID) {
+  PLAYER_ID = 'player_' + Math.random().toString(36).slice(2, 10);
+  localStorage.setItem('ecochain_player_id', PLAYER_ID);
+}
+
+// ── API status indicator ──────────────────────────────────────────────────────
+var apiOnline = false;
+var apiCheckInterval = null;
+
+function setApiStatus(online) {
+  apiOnline = online;
+  var el = document.getElementById('apiStatus');
+  if (!el) return;
+  if (online) {
+    el.textContent = '🟢 後端已連線';
+    el.style.background = 'rgba(5,150,105,.25)';
+    el.style.color = '#6ee7b7';
+    el.style.borderColor = 'rgba(5,150,105,.4)';
+  } else {
+    el.textContent = '🔴 後端離線';
+    el.style.background = 'rgba(220,38,38,.2)';
+    el.style.color = '#fca5a5';
+    el.style.borderColor = 'rgba(220,38,38,.3)';
+  }
+}
+
+async function checkBackendHealth() {
+  try {
+    var r = await fetch(BACKEND_URL + '/health', { signal: AbortSignal.timeout(4000) });
+    setApiStatus(r.ok);
+  } catch(e) {
+    setApiStatus(false);
+  }
+}
+
+// ── GNN API call (replaces the local computeGNN for the HUD score) ────────────
+var gnnDebounceTimer = null;
+var lastGNNResult = null;
+
+async function callGNNAnalyze() {
+  if (!apiOnline) return null;
+  try {
+    var payload = {
+      player_id: PLAYER_ID,
+      cells: cells.map(function(c) {
+        if (!c) return null;
+        return { id: c.id, name: c.name, dEmoji: c.dEmoji || c.emoji,
+                 tr: c.tr, water: !!c.water };
+      }),
+      coins: coins,
+      season: seasonIdx,
+      gps_event_bonus: gpsEventBonus,
+    };
+    var r = await fetch(BACKEND_URL + '/gnn/analyze/detail', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var data = await r.json();
+    lastGNNResult = data;
+    updateGNNPanel(data);
+    return data;
+  } catch(e) {
+    console.warn('[GNN API]', e.message);
+    return null;
+  }
+}
+
+// Debounced trigger: call backend GNN max once per 2s after cell changes
+function triggerGNN() {
+  clearTimeout(gnnDebounceTimer);
+  gnnDebounceTimer = setTimeout(callGNNAnalyze, 2000);
+}
+
+// ── Species Importance Analysis ───────────────────────────────────────────────
+var _importanceRunning = false;
+
+async function runImportance() {
+  if (!apiOnline) { toast('⚠️ 後端離線，無法執行分析'); return; }
+  var presentCells = cells.filter(function(c){ return c; });
+  if (presentCells.length < 2) { toast('⚠️ 至少需要 2 種生物才能分析'); return; }
+  if (_importanceRunning) return;
+  _importanceRunning = true;
+
+  var panel = document.getElementById('importancePanel');
+  var out   = document.getElementById('importanceOut');
+  if (panel) panel.style.display = 'block';
+  if (out)   out.innerHTML = '<div style="color:var(--accent2);font-weight:800;text-align:center;padding:10px">🔬 GNN 分析中...</div>';
+
+  try {
+    var payload = {
+      player_id: PLAYER_ID,
+      cells: cells.map(function(c) {
+        if (!c) return null;
+        return { id: c.id, name: c.name, dEmoji: c.dEmoji || c.emoji, tr: c.tr, water: !!c.water };
+      }),
+      coins: coins, season: seasonIdx, gps_event_bonus: gpsEventBonus,
+    };
+    var r = await fetch(BACKEND_URL + '/gnn/importance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var data = await r.json();
+    renderImportance(data);
+  } catch(e) {
+    if (out) out.innerHTML = '<div style="color:#ef4444;font-size:10px">分析失敗：' + e.message + '</div>';
+  }
+  _importanceRunning = false;
+}
+
+function renderImportance(data) {
+  var out = document.getElementById('importanceOut');
+  if (!out) return;
+
+  var baseline = data.baseline || 0;
+  var impact   = data.impact   || [];
+  var chains   = data.chain_effects || [];
+
+  if (!impact.length) {
+    out.innerHTML = '<div style="color:var(--text2);font-size:10px">無法計算（物種太少）</div>';
+    return;
+  }
+
+  var maxDrop = Math.max.apply(null, impact.map(function(i){ return Math.abs(i.drop); })) || 1;
+
+  var html = '<div style="font-size:9px;color:var(--text2);margin-bottom:8px;font-weight:700">'
+    + '基線分數 <span style="color:var(--accent);font-size:11px">' + baseline.toFixed(1) + '</span> 分　'
+    + '· 移除某物種後的分數降幅'
+    + '</div>';
+
+  // ── 重要性排行 ──
+  impact.forEach(function(item) {
+    var drop    = item.drop;
+    var pct     = Math.min(100, Math.round(Math.abs(drop) / maxDrop * 100));
+    var barColor = item.critical ? '#ef4444' : drop >= 2 ? '#f59e0b' : '#6b7280';
+    var bgColor  = item.critical ? '#fee2e2' : drop >= 2 ? '#fef3c7' : '#f3f4f6';
+    var label    = item.critical ? '關鍵' : drop >= 2 ? '重要' : '一般';
+
+    html += '<div style="margin-bottom:7px">'
+      + '<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">'
+      + '<span style="font-size:14px">' + item.emoji + '</span>'
+      + '<span style="font-size:10px;font-weight:800;flex:1">' + item.name + '</span>'
+      + '<span style="font-size:8px;font-weight:800;padding:1px 6px;border-radius:4px;'
+      + 'background:' + bgColor + ';color:' + barColor + '">' + label + '</span>'
+      + '<span style="font-size:10px;font-weight:900;color:' + barColor + ';min-width:38px;text-align:right">'
+      + (drop > 0 ? '−' + drop.toFixed(1) : drop < 0 ? '+' + Math.abs(drop).toFixed(1) : '±0') + '分</span>'
+      + '</div>'
+      + '<div style="height:5px;background:var(--surface2);border-radius:99px;overflow:hidden">'
+      + '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:99px;transition:width .5s"></div>'
+      + '</div>'
+      + '</div>';
+  });
+
+  // ── 連鎖效應 ──
+  if (chains.length > 0) {
+    html += '<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px">'
+      + '<div style="font-size:9px;font-weight:800;color:var(--text2);margin-bottom:6px">⛓ 連鎖效應（移除誰會波及誰）</div>';
+    chains.forEach(function(c) {
+      var removedName = c.removed;
+      var affectedStr = c.affected.map(function(a){
+        return a.startsWith('缺少獵物:') ? '⚠️'+a.replace('缺少獵物:','缺少獵物 ') : a;
+      }).join('、');
+      html += '<div style="font-size:9px;line-height:1.7;color:var(--text)">'
+        + '移除 <b>' + removedName + '</b> → 影響：' + affectedStr
+        + '</div>';
+    });
+    html += '</div>';
+  }
+
+  html += '<div style="font-size:8px;color:var(--text2);margin-top:8px">'
+    + '🤖 GNN perturbation analysis · 每個物種各做一次 forward pass'
+    + '</div>';
+
+  out.innerHTML = html;
+}
+
+// ── Update UI from GNN result ─────────────────────────────────────────────────
+function updateGNNPanel(data) {
+  if (!data) return;
+
+  var score = data.score;
+  var gps   = data.gps;
+  lastGps = gps;
+
+  // HUD
+  var fill = document.getElementById('ecoFill');
+  if (fill) {
+    fill.style.width = score + '%';
+    fill.style.background = score >= 70 ? '#25a08c' : score >= 40 ? '#f59e0b' : '#ef4444';
+  }
+  var scoreTop = document.getElementById('ecoScoreTop');
+  if (scoreTop) scoreTop.textContent = Math.round(score);
+  var gpsEl = document.getElementById('gpsVal');
+  if (gpsEl) gpsEl.textContent = gps.toFixed(1);
+
+  // GNN 分析面板
+  var out = document.getElementById('gnnOut');
+  if (out) {
+    var html = '';
+
+    // Shannon 多樣性（後端回傳 shannon 欄位，沒有則用本地算的）
+    var sh = (data.shannon !== undefined) ? data.shannon : null;
+    if (sh !== null) {
+      var shPct = Math.round(sh * 100);
+      var shColor = sh>=0.7?'#1a7f6e':sh>=0.4?'#ca8a04':'#dc2626';
+      html += '<div style="margin-bottom:5px">'
+        +'<div style="font-size:9px;color:var(--text2);font-weight:800;margin-bottom:2px">📊 Shannon 多樣性指數（Pielou\'s J）</div>'
+        +'<div style="display:flex;align-items:center;gap:6px">'
+        +'<div style="flex:1;height:5px;background:var(--surface2);border-radius:99px;overflow:hidden">'
+        +'<div style="height:100%;width:'+shPct+'%;background:'+shColor+';border-radius:99px;transition:width .6s"></div>'
+        +'</div>'
+        +'<span style="font-size:9px;font-weight:900;color:'+shColor+'">'+shPct+'%</span>'
+        +'</div>'
+        +'<div style="font-size:9px;color:var(--text2);margin-top:1px">物種個體分布均勻度</div>'
+        +'</div>';
+    }
+
+    // 食物鏈完整性（用 positives 推斷）
+    var hasP = (data.positives||[]).some(function(p){return p.indexOf('生產者')>=0;});
+    var hasH = (data.positives||[]).some(function(p){return p.indexOf('消費者')>=0||p.indexOf('草食')>=0;});
+    var hasPr= (data.positives||[]).some(function(p){return p.indexOf('掠食')>=0;});
+    html += '<div style="margin-bottom:6px">'
+      +'<div style="font-size:9px;color:var(--text2);font-weight:800;margin-bottom:2px">🔗 食物鏈完整性</div>'
+      +'<div style="display:flex;gap:4px">'
+      +'<span style="font-size:9px;padding:1px 6px;border-radius:5px;font-weight:800;background:'+(hasP?'#d1fae5':'#fee2e2')+';color:'+(hasP?'#065f46':'#991b1b')+'">🌿 生產者</span>'
+      +'<span style="font-size:9px;padding:1px 6px;border-radius:5px;font-weight:800;background:'+(hasH?'#d1fae5':'#fee2e2')+';color:'+(hasH?'#065f46':'#991b1b')+'">🐑 消費者</span>'
+      +'<span style="font-size:9px;padding:1px 6px;border-radius:5px;font-weight:800;background:'+(hasPr?'#d1fae5':'#fee2e2')+';color:'+(hasPr?'#065f46':'#991b1b')+'">🦅 掠食者</span>'
+      +'</div></div>';
+
+    // 正面/警告訊息
+    (data.positives || []).filter(function(p){
+      return p.indexOf('Shannon')<0;  // Shannon 已單獨顯示
+    }).slice(0,3).forEach(function(p) {
+      html += '<div class="gnn-row"><span class="badge bg">✅</span><span class="gnn-msg">'+p+'</span></div>';
+    });
+    (data.issues || []).forEach(function(iss) {
+      var cls = iss.type === 'bad' ? 'bb' : 'bw';
+      var icon = iss.type === 'bad' ? '❌' : '⚠️';
+      html += '<div class="gnn-row"><span class="badge '+cls+'">'+icon+'</span><span class="gnn-msg">'+iss.msg+'</span></div>';
+    });
+
+    if (!html) html = '<div style="font-size:10px;color:var(--text2)">放置生物後 GNN 即時分析...</div>';
+    html += '<div style="font-size:8.5px;color:var(--accent2);margin-top:4px;font-weight:700">🤖 '+(data.model_version||'gnn-v3')+' · 📐 Shannon×25% + 食物鏈×60% · 🕸 推薦：Jaccard×70%</div>';
+    html += '<div style="margin-top:7px;text-align:center">'
+      +'<button onclick="runImportance()" style="font-size:9.5px;font-weight:800;padding:4px 14px;'
+      +'border-radius:8px;border:1.5px solid var(--accent);background:linear-gradient(135deg,#52b788,#2d6a4f);'
+      +'color:#fff;cursor:pointer;width:100%">🔬 分析物種關鍵程度</button>'
+      +'</div>';
+    out.innerHTML = html;
+  }
+
+  // 推薦面板
+  var rec = document.getElementById('gnnRec');
+  if (rec && data.recommendations && data.recommendations.length) {
+    var rhtml = '';
+    data.recommendations.slice(0, 3).forEach(function(r) {
+      // ── 來源標注 ──
+      var sourceHtml = '';
+      if (r.network && r.network !== 'built-in' && r.network !== '') {
+        sourceHtml = '<div style="font-size:8px;color:var(--accent);font-weight:700;margin-top:2px;'
+          + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px" '
+          + 'title="' + r.network + (r.ref ? '（' + r.ref + '）' : '') + '">'
+          + '📖 ' + r.network
+          + (r.ref ? '<span style="color:var(--text2);font-weight:400"> · ' + r.ref + '</span>' : '')
+          + '</div>';
+      }
+
+      // ── 數值標籤（Jaccard + 分數增益）──
+      var metricsHtml = '';
+      if (r.jaccard !== undefined && r.jaccard > 0) {
+        var jPct = Math.round(r.jaccard * 100);
+        var jColor = jPct >= 30 ? '#1a7f6e' : jPct >= 15 ? '#ca8a04' : '#6b7280';
+        metricsHtml += '<span style="font-size:8px;font-weight:800;color:' + jColor + ';'
+          + 'background:' + (jPct >= 30 ? '#d1fae5' : jPct >= 15 ? '#fef3c7' : '#f3f4f6') + ';'
+          + 'padding:1px 5px;border-radius:4px;white-space:nowrap" title="與真實食物網的 Jaccard 相符度">'
+          + '🕸 ' + jPct + '%</span> ';
+      }
+      if (r.score_gain !== undefined && r.score_gain !== 0) {
+        var sg = r.score_gain;
+        var sgColor = sg >= 5 ? '#065f46' : sg >= 0 ? '#ca8a04' : '#991b1b';
+        var sgBg    = sg >= 5 ? '#d1fae5' : sg >= 0 ? '#fef3c7' : '#fee2e2';
+        metricsHtml += '<span style="font-size:8px;font-weight:800;color:' + sgColor + ';'
+          + 'background:' + sgBg + ';padding:1px 5px;border-radius:4px;white-space:nowrap" '
+          + 'title="加入此物種後生態分數預估增益">'
+          + (sg >= 0 ? '+' : '') + sg.toFixed(1) + '分</span>';
+      }
+
+      rhtml += '<div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:7px;'
+        + 'cursor:pointer;padding:5px 6px;border-radius:9px;border:1.5px solid var(--border);'
+        + 'background:var(--bg);transition:background .12s" '
+        + 'onclick="quickBuyRec(\''+r.id+'\')" '
+        + 'onmouseover="this.style.background=\'var(--surface2)\'" '
+        + 'onmouseout="this.style.background=\'var(--bg)\'" '
+        + 'title="點擊快速選取">'
+        + '<span style="font-size:18px;margin-top:1px">'+r.emoji+'</span>'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;gap:4px">'
+        + '<span style="font-size:11px;color:var(--text);font-weight:800">'+r.name+'</span>'
+        + '<span style="font-size:9px;color:var(--accent2);font-weight:800;flex-shrink:0">選取 →</span>'
+        + '</div>'
+        + (metricsHtml ? '<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:3px">' + metricsHtml + '</div>' : '')
+        + sourceHtml
+        + '</div>'
+        + '</div>';
+    });
+
+    // 標注底部說明
+    rhtml += '<div style="font-size:7.5px;color:var(--text2);margin-top:2px;line-height:1.5">'
+      + '🕸 = 與真實食物網 Jaccard 相符度（越高越自然）<br>'
+      + '數字 = 加入後生態分數預估增益'
+      + '</div>';
+
+    rec.innerHTML = rhtml;
+  }
+}
+
+// ── Multi-Character Save / Load System ────────────────────────────────────────
+// Saves are stored in localStorage as 'ecochain_saves' (JSON array of slots).
+// Each slot: { slotId, charName, ecoScore, speciesCount, savedAt, saveData }
+// Passwords are NEVER stored locally — all verification happens on the backend.
+// slot_id is UUID v4 generated on first account creation.
+
+var MAX_SLOTS = 6;
+
+function _genSlotId() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+function getAllSlots() {
+  try {
+    var raw = localStorage.getItem('ecochain_saves');
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function saveAllSlots(slots) {
+  localStorage.setItem('ecochain_saves', JSON.stringify(slots));
+}
+
+function buildSaveData() {
+  return {
+    coins: coins, totalEarned: totalEarned,
+    cells: cells.map(function(c) { return c ? { id: c.id, name: c.name, dEmoji: c.dEmoji || c.emoji } : null; }),
+    seasonIdx: seasonIdx, seasonTick: seasonTick,
+    unlockedAch: unlockedAch, gridSize: gridSize,
+    upgrades: UPGRADES.map(function(u) { return { id: u.id, bought: u.bought }; }),
+    entityXP: entityXP || {},
+    ecoScore: lastGNNResult ? lastGNNResult.score : 0,
+    speciesCount: cells.filter(function(c) { return c !== null; }).length,
+  };
+}
+
+function restoreSaveData(sd) {
+  coins = sd.coins || 120;
+  totalEarned = sd.totalEarned || 120;
+  seasonIdx = sd.seasonIdx || 0;
+  seasonTick = sd.seasonTick || 0;
+  unlockedAch = sd.unlockedAch || {};
+  gridSize = sd.gridSize || 35;
+  entityXP = sd.entityXP || {};
+  cells = [];
+  (sd.cells || []).forEach(function(c) {
+    if (!c) { cells.push(null); return; }
+    var item = findItem(c.id);
+    if (item) {
+      var obj = {}; for (var k in item) obj[k] = item[k];
+      obj.name = c.name; obj.dEmoji = c.dEmoji || c.emoji;
+      cells.push(obj);
+    } else { cells.push(null); }
+  });
+  while (cells.length < gridSize) cells.push(null);
+  if (sd.upgrades) sd.upgrades.forEach(function(u) {
+    var found = UPGRADES.find(function(x) { return x.id === u.id; });
+    if (found && u.bought && !found.bought) { found.bought = true; found.effect(); }
+  });
+  updateAll(); updateSeason(); renderUpgrades();
+  triggerGNN();
+}
+
+// ── Save Modal ────────────────────────────────────────────────────────────────
+function openSaveModal() {
+  var slots = getAllSlots();
+  var modal = document.getElementById('saveModal');
+  var content = document.getElementById('saveModalContent');
+
+  var html = '<div style="font-size:12px;color:var(--text2);margin-bottom:14px">選擇要覆蓋的存檔槽，或建立新角色</div>';
+
+  slots.forEach(function(slot, i) {
+    html += '<div style="border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--surface2);display:flex;justify-content:space-between;align-items:center">' 
+      + '<div>' 
+      + '<div style="font-weight:800;font-size:13px">🧑‍🌾 ' + slot.charName + '</div>' 
+      + '<div style="font-size:10px;color:var(--text2);margin-top:2px">🌿 生態分 ' + Math.round(slot.ecoScore||0) + '  ·  ' + (slot.speciesCount||0) + ' 物種  ·  ' + new Date(slot.savedAt).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) + '</div>' 
+      + '</div>' 
+      + '<button onclick="confirmOverwriteSlot(' + i + ')" style="font-size:10px;font-weight:800;padding:4px 10px;border-radius:7px;border:1.5px solid #d97706;background:#fef3c7;color:#92400e;cursor:pointer">覆蓋</button>' 
+      + '</div>';
+  });
+
+  if (slots.length < MAX_SLOTS) {
+    html += '<div style="border:1.5px dashed var(--border);border-radius:10px;padding:12px;margin-bottom:8px;text-align:center">' 
+      + '<div style="font-size:12px;color:var(--text2);margin-bottom:8px">＋ 新建角色存檔</div>' 
+      + '<input id="newCharName" placeholder="角色名稱（例：加薪的農場）" maxlength="20" style="width:100%;box-sizing:border-box;padding:6px 10px;border-radius:7px;border:1.5px solid var(--border);font-size:12px;font-family:sans-serif;margin-bottom:6px;background:var(--bg)">' 
+      + '<input id="newCharPwd" type="password" placeholder="設定密碼（雲端同步時驗證）" maxlength="60" style="width:100%;box-sizing:border-box;padding:6px 10px;border-radius:7px;border:1.5px solid var(--border);font-size:12px;font-family:sans-serif;margin-bottom:4px;background:var(--bg)">' 
+      + '<input id="newCharPwd2" type="password" placeholder="再次輸入密碼" maxlength="60" style="width:100%;box-sizing:border-box;padding:6px 10px;border-radius:7px;border:1.5px solid var(--border);font-size:12px;font-family:sans-serif;margin-bottom:8px;background:var(--bg)">' 
+      + '<button onclick="doNewSlotSave()" style="font-size:11px;font-weight:800;padding:5px 16px;border-radius:7px;border:none;background:var(--accent);color:#fff;cursor:pointer">💾 建立並存檔</button>' 
+      + '</div>';
+  } else {
+    html += '<div style="font-size:11px;color:var(--text2);text-align:center;padding:8px">已達 ' + MAX_SLOTS + ' 個存檔上限，請覆蓋現有角色</div>';
+  }
+
+  content.innerHTML = html;
+  modal.style.display = 'flex';
+}
+
+function confirmOverwriteSlot(idx) {
+  var slots = getAllSlots();
+  var slot = slots[idx];
+  var content = document.getElementById('saveModalContent');
+  content.innerHTML = '<div style="text-align:center;padding:8px 0">' 
+    + '<div style="font-size:16px;margin-bottom:6px">🔐 覆蓋確認</div>' 
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:14px">覆蓋「' + slot.charName + '」需輸入該角色的密碼</div>' 
+    + '<input id="overwritePwd" type="password" placeholder="輸入密碼" style="width:80%;padding:7px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:sans-serif;background:var(--bg);display:block;margin:0 auto 12px">' 
+    + '<div style="display:flex;gap:8px;justify-content:center">' 
+    + '<button onclick="openSaveModal()" style="font-size:11px;font-weight:800;padding:5px 14px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface2);color:var(--accent);cursor:pointer">← 返回</button>' 
+    + '<button id="overwriteConfirmBtn" onclick="doOverwriteSlot(' + idx + ')" style="font-size:11px;font-weight:800;padding:5px 14px;border-radius:7px;border:none;background:#f59e0b;color:#fff;cursor:pointer">確認覆蓋</button>' 
+    + '</div></div>';
+}
+
+async function doOverwriteSlot(idx) {
+  var slots = getAllSlots();
+  var slot = slots[idx];
+  var pwd = document.getElementById('overwritePwd').value;
+  if (!pwd) { toast('請輸入密碼'); return; }
+
+  var btn = document.getElementById('overwriteConfirmBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '驗證中…'; }
+
+  var loginResult = await loginAccount(slot.slotId, pwd);
+  if (!loginResult) {
+    toast('❌ 密碼錯誤，無法覆蓋');
+    var inp = document.getElementById('overwritePwd');
+    if (inp) { inp.style.borderColor = '#ef4444'; inp.value = ''; }
+    if (btn) { btn.disabled = false; btn.textContent = '確認覆蓋'; }
+    return;
+  }
+
+  var sd = buildSaveData();
+  slots[idx] = Object.assign({}, slot, {
+    saveData: sd, ecoScore: sd.ecoScore,
+    speciesCount: sd.speciesCount, savedAt: Date.now(),
+  });
+  saveAllSlots(slots);
+  cloudSaveSlot(slot.slotId, slot.charName, sd);
+  document.getElementById('saveModal').style.display = 'none';
+  toast('💾 「' + slot.charName + '」存檔成功！');
+  addLog('💾 存檔：' + slot.charName, 'good');
+}
+
+async function doNewSlotSave() {
+  var name = (document.getElementById('newCharName').value || '').trim();
+  var pwd  = (document.getElementById('newCharPwd').value || '');
+  var pwd2 = (document.getElementById('newCharPwd2').value || '');
+  if (!name) { toast('請輸入角色名稱'); return; }
+  if (!pwd)  { toast('請設定密碼'); return; }
+  if (pwd !== pwd2) { toast('❌ 兩次密碼不一致'); return; }
+  if (pwd.length < 4) { toast('密碼至少 4 個字元'); return; }
+
+  var slots = getAllSlots();
+  if (slots.length >= MAX_SLOTS) { toast('存檔槽已滿'); return; }
+
+  var btn = document.querySelector('#saveModalContent button[onclick="doNewSlotSave()"]');
+  if (btn) { btn.disabled = true; btn.textContent = '建立中…'; }
+
+  var slotId = _genSlotId();
+  var sd = buildSaveData();
+
+  if (apiOnline) {
+    var result = await registerAccount(slotId, name, pwd);
+    if (!result || result.error) {
+      toast('❌ 後端建立失敗：' + (result && result.error ? result.error : '離線'));
+      if (btn) { btn.disabled = false; btn.textContent = '💾 建立並存檔'; }
+      return;
+    }
+  }
+
+  var newSlot = {
+    slotId: slotId, charName: name,
+    ecoScore: sd.ecoScore, speciesCount: sd.speciesCount,
+    savedAt: Date.now(), saveData: sd,
+  };
+  slots.push(newSlot);
+  saveAllSlots(slots);
+  document.getElementById('saveModal').style.display = 'none';
+  toast('💾 新角色「' + name + '」建立成功！');
+  addLog('💾 新角色存檔：' + name, 'good');
+  cloudSaveSlot(slotId, name, sd);
+}
+
+// ── Load Modal ────────────────────────────────────────────────────────────────
+function openLoadModal() {
+  var modal     = document.getElementById('loadModal');
+  var contentEl = document.getElementById('loadModalContent');
+  modal.style.display = 'flex';
+  contentEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text2)"><div style="font-size:28px">⏳</div><div style="margin-top:8px">從雲端讀取帳號清單…</div></div>';
+
+  if (!apiOnline) {
+    _renderLoadSlots(getAllSlots());
+    return;
+  }
+
+  fetch(BACKEND_URL + '/accounts/list', { signal: AbortSignal.timeout(8000) })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var accounts = data.accounts || [];
+      if (accounts.length === 0) {
+        contentEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text2)"><div style="font-size:32px;margin-bottom:8px">📂</div><div>資料庫裡沒有任何帳號</div></div>';
+        return;
+      }
+      // Merge DB accounts with localStorage metadata for display
+      var lsSlots = getAllSlots();
+      var lsMap = {};
+      lsSlots.forEach(function(s) { lsMap[s.slotId] = s; });
+
+      var slots = accounts.map(function(a) {
+        var ls = lsMap[a.slot_id];
+        return {
+          slotId:       a.slot_id,
+          charName:     a.player_name,
+          ecoScore:     ls ? (ls.ecoScore || 0) : 0,
+          speciesCount: ls ? (ls.speciesCount || 0) : 0,
+          savedAt:      ls ? ls.savedAt : null,
+        };
+      });
+      _renderLoadSlots(slots);
+    })
+    .catch(function(e) {
+      // Fallback to localStorage on network error
+      console.warn('accounts/list failed, falling back to localStorage', e);
+      _renderLoadSlots(getAllSlots());
+    });
+}
+async function doLoginByName() {
+  var name = (document.getElementById('loginByNameInput') || {}).value || '';
+  var pwd  = (document.getElementById('loginByNamePwd')   || {}).value || '';
+  if (!name || !pwd) { toast('請輸入角色名稱和密碼'); return; }
+  var pwHash = await sha256hex(pwd);
+  try {
+    var r = await fetch(BACKEND_URL + '/auth/login-by-name', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_name: name, password_hash: pwHash }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) { toast('❌ 名稱或密碼錯誤'); return; }
+    var data = await r.json();
+    storeToken(data.slot_id, data.token);
+    // Load save data immediately
+    var saveData = await cloudLoadSlot(data.slot_id);
+    if (saveData) {
+      restoreSaveData(saveData);
+      document.getElementById('loadModal').style.display = 'none';
+      toast('✅ 已用角色名稱登入並讀取存檔：' + name);
+    } else {
+      toast('⚠️ 登入成功但找不到存檔資料');
+    }
+  } catch(e) { toast('❌ 登入失敗：' + e.message); }
+}
+
+function _renderLoadSlots(slots) {
+  var contentEl = document.getElementById('loadModalContent');
+  if (!slots || slots.length === 0) {
+    contentEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text2)"><div style="font-size:32px;margin-bottom:8px">📂</div><div>沒有找到任何存檔</div></div>';
+    return;
+  }
+  var html = '<div style="font-size:12px;color:var(--text2);margin-bottom:12px">選擇要讀取的角色（輸入密碼向後端驗證身份）</div>'
+    + '<div style="border:1.5px dashed var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px;background:var(--bg)">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">🔍 找不到角色？用名稱登入</div>'
+    + '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'
+    + '<input id="loginByNameInput" type="text" placeholder="角色名稱" maxlength="30" style="flex:1;min-width:80px;padding:5px 10px;border-radius:7px;border:1.5px solid var(--border);font-size:12px;font-family:sans-serif;background:var(--surface2)">'
+    + '<input id="loginByNamePwd" type="password" placeholder="密碼" maxlength="60" style="flex:1;min-width:80px;padding:5px 10px;border-radius:7px;border:1.5px solid var(--border);font-size:12px;font-family:sans-serif;background:var(--surface2)">'
+    + '<button onclick="doLoginByName()" style="font-size:11px;font-weight:800;padding:5px 12px;border-radius:7px;border:none;background:var(--accent);color:#fff;cursor:pointer">登入</button>'
+    + '</div>'
+    + '</div>';
+  slots.forEach(function(slot, i) {
+    var meta = slot.savedAt
+      ? '🌿 生態分 ' + Math.round(slot.ecoScore||0) + '  ·  ' + (slot.speciesCount||0) + ' 物種  ·  ' + new Date(slot.savedAt).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+      : '（本機資料已清除，請輸入密碼從雲端讀取）';
+    html += '<div style="border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--surface2)">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
+      + '<div>'
+      + '<div style="font-weight:800;font-size:13px">🧑\u200d🌾 ' + slot.charName + '</div>'
+      + '<div style="font-size:10px;color:var(--text2);margin-top:2px">' + meta + '</div>'
+      + '</div>'
+      + '<button onclick="deleteSlotConfirm(' + i + ')" title="刪除此存檔" style="font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid #fca5a5;background:#fee2e2;color:#b91c1c;cursor:pointer">🗑️</button>'
+      + '</div>'
+      + '<div style="display:flex;gap:6px;align-items:center">'
+      + '<input id="loadPwd_' + i + '" type="password" placeholder="輸入密碼" maxlength="60" style="flex:1;padding:5px 10px;border-radius:7px;border:1.5px solid var(--border);font-size:12px;font-family:sans-serif;background:var(--bg)">'
+      + '<button id="loadBtn_' + i + '" onclick="doLoadSlot(' + i + ')" style="font-size:11px;font-weight:800;padding:5px 12px;border-radius:7px;border:none;background:var(--accent);color:#fff;cursor:pointer">讀入</button>'
+      + '</div>'
+      + '</div>';
+  });
+  contentEl.innerHTML = html;
+  slots.forEach(function(slot, i) {
+    var inp = document.getElementById('loadPwd_' + i);
+    if (inp) inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLoadSlot(i); });
+  });
+  window.loadedSlots = slots;
+}
+async function doLoadSlot(idx) {
+  var slots = window.loadedSlots || getAllSlots();
+  var slot = slots[idx];
+  var pwd = (document.getElementById('loadPwd_' + idx).value || '');
+  if (!pwd) { toast('請輸入密碼'); return; }
+
+  var btn = document.getElementById('loadBtn_' + idx);
+  if (btn) { btn.disabled = true; btn.textContent = '驗證中…'; }
+
+  var cloudData = null;
+  if (apiOnline) {
+    var loginResult = await loginAccount(slot.slotId, pwd);
+    if (!loginResult) {
+      toast('❌ 密碼錯誤');
+      var inp = document.getElementById('loadPwd_' + idx);
+      if (inp) { inp.style.borderColor = '#ef4444'; inp.value = ''; }
+      if (btn) { btn.disabled = false; btn.textContent = '讀入'; }
+      return;
+    }
+    cloudData = await cloudLoadSlot(slot.slotId);
+  } else {
+    toast('⚠️ 離線模式：讀取本機存檔（無法驗證密碼）');
+  }
+
+  document.getElementById('loadModal').style.display = 'none';
+  var sd = cloudData || slot.saveData;
+  if (cloudData) {
+    slots[idx].saveData = cloudData;
+    slots[idx].ecoScore = cloudData.ecoScore || slot.ecoScore;
+    slots[idx].speciesCount = cloudData.speciesCount || slot.speciesCount;
+    saveAllSlots(slots);
+  }
+  restoreSaveData(sd);
+  toast('📂 讀入角色「' + slot.charName + '」成功！' + (cloudData ? ' ☁️ 雲端版本' : ''));
+  addLog('📂 讀入角色：' + slot.charName, 'good');
+}
+
+function deleteSlotConfirm(idx) {
+  var slots = getAllSlots();
+  var slot = slots[idx];
+  var content = document.getElementById('loadModalContent');
+  content.innerHTML = '<div style="text-align:center;padding:16px">' 
+    + '<div style="font-size:16px;margin-bottom:6px">🗑️ 刪除確認</div>' 
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:14px">刪除「' + slot.charName + '」？輸入密碼確認，同時刪除後端記錄，無法復原。</div>' 
+    + '<input id="deletePwd" type="password" placeholder="輸入密碼" style="width:80%;padding:7px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:sans-serif;background:var(--bg);display:block;margin:0 auto 12px">' 
+    + '<div style="display:flex;gap:8px;justify-content:center">' 
+    + '<button onclick="openLoadModal()" style="font-size:11px;font-weight:800;padding:5px 14px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface2);color:var(--accent);cursor:pointer">← 返回</button>' 
+    + '<button id="deleteConfirmBtn" onclick="doDeleteSlot(' + idx + ')" style="font-size:11px;font-weight:800;padding:5px 14px;border-radius:7px;border:none;background:#ef4444;color:#fff;cursor:pointer">確認刪除</button>' 
+    + '</div></div>';
+}
+
+async function doDeleteSlot(idx) {
+  var slots = getAllSlots();
+  var slot = slots[idx];
+  var pwd = document.getElementById('deletePwd').value;
+  if (!pwd) { toast('請輸入密碼'); return; }
+
+  var btn = document.getElementById('deleteConfirmBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '刪除中…'; }
+
+  if (apiOnline) {
+    var ok = await deleteAccountRemote(slot.slotId, pwd);
+    if (!ok) {
+      toast('❌ 密碼錯誤，無法刪除');
+      var inp = document.getElementById('deletePwd');
+      if (inp) { inp.style.borderColor = '#ef4444'; }
+      if (btn) { btn.disabled = false; btn.textContent = '確認刪除'; }
+      return;
+    }
+  }
+
+  slots.splice(idx, 1);
+  saveAllSlots(slots);
+  toast('🗑️ 存檔「' + slot.charName + '」已刪除');
+  openLoadModal();
+}
+
+// ── Cloud Sync (per slot) — requires Bearer token ────────────────────────────
+async function cloudSaveSlot(slotId, charName, saveData) {
+  if (!apiOnline) return;
+  try {
+    var headers = await authHeaders(slotId);
+    if (!headers['Authorization']) return;
+    var r = await fetch(BACKEND_URL + '/save', {
+      method: 'POST', headers: headers,
+      body: JSON.stringify({ player_name: charName, save_data: saveData }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (r.status === 401) { removeToken(slotId); addLog('☁️ Token 已過期，下次讀檔時重新登入', 'warn'); return; }
+    if (r.ok) addLog('☁️ 雲端同步：' + charName, 'good');
+  } catch(e) {}
+}
+
+async function cloudLoadSlot(slotId) {
+  if (!apiOnline) return null;
+  try {
+    var headers = await authHeaders(slotId);
+    if (!headers['Authorization']) return null;
+    var r = await fetch(BACKEND_URL + '/load', {
+      method: 'GET', headers: headers, signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) return null;
+    var data = await r.json();
+    return data.found ? data.save_data : null;
+  } catch(e) { return null; }
+}
+
+// Legacy compat
+async function cloudSave(playerName) { /* no-op */ }
+async function cloudLoad() {
+  var slots = getAllSlots();
+  if (slots.length > 0) {
+    openLoadModal();
+  } else {
+    var raw = localStorage.getItem('ecochain_save');
+    if (raw) {
+      try { var sd = JSON.parse(raw); restoreSaveData(sd); toast('📂 已讀取舊存檔，請重新存檔以建立角色'); } catch(e) {}
+    }
+  }
+}
+
+// ── Leaderboard modal ─────────────────────────────────────────────────────────
+async function openLeaderboard() {
+  var modal = document.getElementById('leaderboardModal');
+  var content = document.getElementById('leaderboardContent');
+  if (!modal) return;
+  content.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text2)">載入中...</div>';
+  modal.style.display = 'flex';
+  if (!apiOnline) {
+    content.innerHTML = '<div style="text-align:center;color:#991b1b">後端離線，無法載入排行榜</div>';
+    return;
+  }
+  try {
+    var r = await fetch(BACKEND_URL + '/leaderboard?limit=15', { signal: AbortSignal.timeout(8000) });
+    var data = await r.json();
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:11px">'
+      + '<tr style="font-weight:900;color:var(--text2);font-size:10px">'
+      + '<td style="padding:4px 6px">#</td><td>玩家</td><td>🧠 健康</td><td>🪙 金幣</td><td>🧬 物種</td></tr>';
+    // player_id is no longer returned by the API (privacy)
+    (data.entries || []).forEach(function(e, i) {
+      var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1)+'';
+      html += '<tr style="border-top:1px solid var(--border)">'
+        + '<td style="padding:5px 6px;font-weight:800">'+medal+'</td>'
+        + '<td style="font-weight:700">'+e.player_name+'</td>'
+        + '<td style="color:var(--accent);font-weight:800">'+e.eco_score+'</td>'
+        + '<td>'+Math.floor(e.coins)+'</td>'
+        + '<td>'+e.species_count+'</td>'
+        + '</tr>';
+    });
+    html += '</table>';
+    content.innerHTML = html || '<div style="color:var(--text2)">暫無排行資料</div>';
+  } catch(e) {
+    content.innerHTML = '<div style="color:#991b1b">載入失敗：'+e.message+'</div>';
+  }
+}
+
+// ─── CATALOG ─────────────────────────────────────────────────────────────────
+var CAT = {
+  plant:[
+    {id:'grass',   name:'青草',   emoji:'🌿',cost:10, tr:0,  water:false,patterns:['🌿','🍀','🌱'], desc:'食物鏈底層，草食主食', color:'#25a08c'},
+    {id:'flower',  name:'花朵',   emoji:'🌸',cost:20, tr:0,  water:false,patterns:['🌸','🌼','🌺'], desc:'吸引蜜蜂，授粉加成', color:'#f9a8d4'},
+    {id:'berry',   name:'漿果叢', emoji:'🫐',cost:30, tr:0,  water:false,patterns:['🫐','🍓','🍒'], desc:'鳥類與雜食動物食物', color:'#a78bfa'},
+    {id:'tree',    name:'大樹',   emoji:'🌳',cost:60, tr:0,  water:false,patterns:['🌳','🌲','🌴'], desc:'碳匯加成，鳥類棲地', color:'#166534'},
+    {id:'shrub',   name:'灌木叢', emoji:'🍃',cost:25, tr:0,  water:false,patterns:['🍃','🌿','🌾'], desc:'棲地與遮蔽加成', color:'#4ade80'},
+    {id:'mushroom',name:'蘑菇',   emoji:'🍄',cost:25, tr:0,  water:false,patterns:['🍄','🍄','🍄'], desc:'分解者，有機循環加成', color:'#a16207'},
+    {id:'wheat',   name:'小麥',   emoji:'🌾',cost:15, tr:0,  water:false,patterns:['🌾','🌾','🌾'], desc:'穀物，草食動物喜愛', color:'#ca8a04'},
+    {id:'cactus',  name:'仙人掌', emoji:'🌵',cost:20, tr:0,  water:false,patterns:['🌵','🌵','🌵'], desc:'耐旱，生境多樣性', color:'#16a34a'},
+    {id:'lotus',   name:'荷花',   emoji:'🪷',cost:35, tr:0,  water:true, patterns:['🪷','🌾','🌿'], desc:'水生植物，池塘必備', color:'#ec4899'},
+    {id:'seaweed', name:'水草',   emoji:'🪸',cost:20, tr:0,  water:true, patterns:['🪸','🌿','🌿'], desc:'水生底層，魚類食物', color:'#0891b2'},
+  ],
+  herbivore:[
+    {id:'sheep',  name:'羊',  emoji:'🐑',cost:80, tr:1,water:false,patterns:['🐑','🐏','🐑'], desc:'草食，溫馴，生態基石', color:'#d1d5db'},
+    {id:'cow',    name:'牛',  emoji:'🐄',cost:120,tr:1,water:false,patterns:['🐄','🐂','🐃'], desc:'草食，體大，需多植物', color:'#78716c'},
+    {id:'rabbit', name:'兔子',emoji:'🐰',cost:50, tr:1,water:false,patterns:['🐰','🐇','🐰'], desc:'草食，繁殖快，狐狸獵物', color:'#fde68a'},
+    {id:'deer',   name:'鹿',  emoji:'🦌',cost:100,tr:1,water:false,patterns:['🦌','🦌','🦌'], desc:'草食，大幅提升多樣性', color:'#92400e'},
+    {id:'horse',  name:'馬',  emoji:'🐎',cost:150,tr:1,water:false,patterns:['🐎','🐎','🐎'], desc:'草食，廣域遊走加成', color:'#78350f'},
+    {id:'goat',   name:'山羊',emoji:'🐐',cost:70, tr:1,water:false,patterns:['🐐','🐐','🐐'], desc:'草食，吃灌木，耐旱加成', color:'#e5e7eb'},
+  ],
+  omnivore:[
+    {id:'cat',      name:'貓',  emoji:'🐱',cost:60,tr:1.5,water:false,patterns:['🐱','🐈','🐈‍⬛'],desc:'寵物，幸福加成', color:'#f97316'},
+    {id:'dog',      name:'狗',  emoji:'🐶',cost:60,tr:1.5,water:false,patterns:['🐶','🐕','🐩'], desc:'寵物，守護土地加成', color:'#a16207'},
+    {id:'chicken',  name:'雞',  emoji:'🐔',cost:40,tr:1.5,water:false,patterns:['🐔','🐓','🐣'], desc:'雜食，昆蟲控制者', color:'#fbbf24'},
+    {id:'pig',      name:'豬',  emoji:'🐷',cost:55,tr:1.5,water:false,patterns:['🐷','🐖','🐗'], desc:'雜食，廚餘轉化加成', color:'#f9a8d4'},
+    {id:'bee',      name:'蜜蜂',emoji:'🐝',cost:45,tr:0.5,water:false,patterns:['🐝','🐝','🐝'], desc:'授粉者！植物收益x1.5', color:'#eab308',special:'bee'},
+    {id:'butterfly',name:'蝴蝶',emoji:'🦋',cost:35,tr:0.5,water:false,patterns:['🦋','🦋','🦋'], desc:'授粉加成，美觀提分', color:'#c084fc'},
+    {id:'bird',     name:'野鳥',emoji:'🐦',cost:65,tr:1.5,water:false,patterns:['🐦','🐦','🦜'], desc:'雜食，鳥巢加成x1.4', color:'#38bdf8'},
+  ],
+  predator:[
+    {id:'fox',  name:'狐狸',  emoji:'🦊',cost:150,tr:2,  water:false,patterns:['🦊','🦊','🦊'], desc:'肉食，控制兔子族群', color:'#f97316'},
+    {id:'wolf', name:'狼',    emoji:'🐺',cost:180,tr:2,  water:false,patterns:['🐺','🐺','🐺'], desc:'頂級肉食，需大型獵物', color:'#6b7280'},
+    {id:'eagle',name:'老鷹',  emoji:'🦅',cost:200,tr:3,  water:false,patterns:['🦅','🦉','🐦'], desc:'頂層掠食者，需完整鏈', color:'#92400e'},
+    {id:'snake',name:'蛇',    emoji:'🐍',cost:130,tr:2,  water:false,patterns:['🐍','🐍','🐍'], desc:'肉食，控制兔鼠族群', color:'#16a34a'},
+    {id:'owl',  name:'貓頭鷹',emoji:'🦉',cost:160,tr:2.5,water:false,patterns:['🦉','🦉','🦉'], desc:'夜行掠食，鳥巢加成', color:'#78350f'},
+  ],
+  aquatic:[
+    {id:'carp',  name:'鯉魚',emoji:'🐟',cost:50,tr:1,  water:true,patterns:['🐟','🐠','🐡'], desc:'需池塘，以水草為食', color:'#f97316'},
+    {id:'salmon',name:'鱒魚',emoji:'🐠',cost:70,tr:1.5,water:true,patterns:['🐠','🐟','🐡'], desc:'掠食魚類，需小魚', color:'#ef4444'},
+    {id:'frog',  name:'青蛙',emoji:'🐸',cost:40,tr:1.5,water:true,patterns:['🐸','🐸','🐸'], desc:'兩棲，橋接水陸生態', color:'#22c55e'},
+    {id:'shrimp',name:'蝦',  emoji:'🦐',cost:30,tr:1,  water:true,patterns:['🦐','🦞','🦀'], desc:'水中底層，分解有機質', color:'#f87171'},
+    {id:'turtle',name:'烏龜',emoji:'🐢',cost:80,tr:1.5,water:true,patterns:['🐢','🐢','🐢'], desc:'長壽，生態穩定大加成', color:'#15803d'},
+    {id:'duck',  name:'鴨子',emoji:'🦆',cost:60,tr:1.5,water:true,patterns:['🦆','🦆','🦆'], desc:'兩棲水鳥，橋接加成', color:'#86efac'},
+    {id:'crab',  name:'螃蟹',emoji:'🦀',cost:45,tr:1,  water:true,patterns:['🦀','🦀','🦀'], desc:'雜食，清潔水域', color:'#dc2626'},
+    {id:'snail', name:'田螺',emoji:'🐌',cost:20,tr:0.5,water:true,patterns:['🐌','🐌','🐌'], desc:'水中分解者，最底層', color:'#a16207'},
+  ],
+  terrain:[
+    {id:'pond',     name:'池塘',  emoji:'🏞️',cost:200,tr:-1,water:false,patterns:['🏞️','🏞️','🏞️'],desc:'解鎖全部水生生態！', color:'#0ea5e9'},
+    {id:'compost',  name:'堆肥桶',emoji:'♻️', cost:80, tr:-1,water:false,patterns:['♻️','♻️','♻️'], desc:'土壤肥力+15%', color:'#65a30d'},
+    {id:'birdhouse',name:'鳥巢箱',emoji:'🏡', cost:90, tr:-1,water:false,patterns:['🏡','🏡','🏡'], desc:'野鳥加成x1.4', color:'#92400e'},
+    {id:'stream',   name:'小溪流',emoji:'💧', cost:150,tr:-1,water:false,patterns:['💧','💧','💧'], desc:'聯結水陸，兩棲加成', color:'#38bdf8'},
+    {id:'rockpile', name:'石堆',  emoji:'🪨', cost:50, tr:-1,water:false,patterns:['🪨','🪨','🪨'], desc:'爬蟲棲地，蛇類加成', color:'#9ca3af'},
+    {id:'fence',    name:'圍欄',  emoji:'🚧', cost:40, tr:-1,water:false,patterns:['🚧','🚧','🚧'], desc:'保護草食，減掠食傷害', color:'#f59e0b'},
+  ],
+};
+var TABS=[{k:'plant',l:'🌿植物'},{k:'herbivore',l:'🐑草食'},{k:'omnivore',l:'🐾雜食'},{k:'predator',l:'🦅肉食'},{k:'aquatic',l:'🐟水生'},{k:'terrain',l:'🏗️地形'}];
+var ROLES={'-1':'設施','0':'生產者','0.5':'授粉者','1':'草食動物','1.5':'雜食動物','2':'肉食動物','2.5':'肉食動物','3':'頂層掠食者'};
+
+// ─── ACHIEVEMENTS ─────────────────────────────────────────────────────────────
+var ACHIEVEMENTS = [
+  {id:'first',    emoji:'🌱', name:'生態起步', desc:'放置第一個物種',    check:function(s){return s.total>=1;}},
+  {id:'pond',     emoji:'💧', name:'水域開拓', desc:'建立池塘並放入水生生物', check:function(s){return s.hasPond&&s.aquatics>=1;}},
+  {id:'chain',    emoji:'🔗', name:'完整食物鏈',desc:'同時有植物、草食、肉食', check:function(s){return s.plants>=1&&s.herbs>=1&&s.preds>=1;}},
+  {id:'balance',  emoji:'⚖️', name:'生態平衡',  desc:'GNN健康度達到60', check:function(s){return s.score>=60;}},
+  {id:'thriving', emoji:'🌟', name:'生態繁榮',  desc:'GNN健康度達到85', check:function(s){return s.score>=85;}},
+  {id:'bee',      emoji:'🐝', name:'授粉大使',  desc:'擁有蜜蜂和5種以上植物', check:function(s){return s.hasBee&&s.plants>=5;}},
+  {id:'diversity',emoji:'🧬', name:'生物多樣性',desc:'同時擁有15種以上生物', check:function(s){return s.total>=15;}},
+  {id:'rich',     emoji:'💰', name:'生態富豪',  desc:'累積金幣超過2000', check:function(s){return s.totalEarned>=2000;}},
+];
+var unlockedAch = {};
+
+// ─── SEASONS ─────────────────────────────────────────────────────────────────
+var SEASONS = [
+  {name:'🌱 春季', gpsBonus:1.1, bg:'#f4f2ee', label:'春季', style:'background:rgba(26,127,110,.25);color:#a3e8dc;border-color:rgba(26,127,110,.4)'},
+  {name:'☀️ 夏季', gpsBonus:1.2, bg:'#f4f2ee', label:'夏季', style:'background:rgba(251,191,36,.2);color:#fde68a;border-color:rgba(251,191,36,.3)'},
+  {name:'🍂 秋季', gpsBonus:0.9, bg:'#f4f2ee', label:'秋季', style:'background:rgba(234,88,12,.2);color:#fdba74;border-color:rgba(234,88,12,.3)'},
+  {name:'❄️ 冬季', gpsBonus:0.7, bg:'#f4f2ee', label:'冬季', style:'background:rgba(37,99,235,.2);color:#93c5fd;border-color:rgba(37,99,235,.3)'},
+];
+var seasonIdx = 0, seasonTick = 0, SEASON_DUR = 300; // 30 seconds each
+
+// ─── EVENTS ───────────────────────────────────────────────────────────────────
+var EVENTS = [
+  {type:'good', msg:'🌧️ 春雨降臨！植物產值提升 30秒', duration:30, effect:function(){gpsEventBonus=1.3;}, end:function(){gpsEventBonus=1;}},
+  {type:'bad',  msg:'🦗 蝗蟲入侵！植物受損，收益暫降', duration:20, effect:function(){gpsEventBonus=0.6;}, end:function(){gpsEventBonus=1;}},
+  {type:'good', msg:'🌈 彩虹出現！生態分數 +10（暫時）', duration:25, effect:function(){ecoBonus=10;}, end:function(){ecoBonus=0;}},
+  {type:'bad',  msg:'🌪️ 強風來襲！外來種入侵，收益暫降', duration:20, effect:function(){gpsEventBonus=0.7;}, end:function(){gpsEventBonus=1;}},
+  {type:'good', msg:'🐛 分解者繁榮！土壤肥力大增', duration:30, effect:function(){gpsEventBonus=1.25;}, end:function(){gpsEventBonus=1;}},
+  {type:'info', msg:'🔬 研究人員到訪！GNN模型更新，分析更精準', duration:15, effect:function(){}, end:function(){}},
+];
+var gpsEventBonus = 1, ecoBonus = 0;
+var activeEvent = null, eventTimer = 0;
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+var coins=120, cells=[], activeTab='plant', selShop=null;
+var pendingIdx=null, rmIdx=null, lastGps=2.0, totalEarned=120;
+for(var i=0;i<35;i++) cells.push(null);
+
+function hasPond(){return cells.some(function(c){return c&&c.id==='pond';});}
+function allItems(){var r=[];Object.keys(CAT).forEach(function(k){CAT[k].forEach(function(x){r.push(x);});});return r;}
+function findItem(id){var found=null;allItems().forEach(function(x){if(x.id===id)found=x;});return found;}
+
+// ─── GNN（科學化分數，與後端 eco_score 公式一致）─────────────────────────────
+//
+// 分數組成：
+//   25%  Shannon-Wiener 多樣性指數（Pielou's J evenness）
+//        H' = -Σ(p_i × ln(p_i))，衡量物種個體分布的均勻程度
+//        例：10 種物種各放 1 格 → J 接近 1；只放 1 種放滿 → J = 0
+//   60%  營養層完整性（食物鏈是否完整）
+//        生產者 +1/3，草食/雜食 +1/3，掠食者 +1/3
+//        斷鏈懲罰：草食無植物 −0.25，掠食無獵物 −0.25
+//   15%  水域 + 授粉者 + 人工設施加成
+//
+function computeGNN(){
+  // ── 1. 統計各分類數量與標誌 ──────────────────────────────
+  var counts = {};   // {id: count}
+  var plants=0, herbs=0, omnis=0, preds=0, aquatics=0, total=0;
+  var pond=false, stream=false, bee=false, compost=false, birdhouse=false, rock=false, fence=false;
+
+  cells.forEach(function(c){
+    if(!c) return;
+    total++;
+    counts[c.id] = (counts[c.id]||0) + 1;
+    if(c.tr===0  && c.id!=='pond' && c.id!=='compost' && c.id!=='birdhouse'
+                 && c.id!=='stream' && c.id!=='rockpile' && c.id!=='fence') plants++;
+    if(c.tr===1)   herbs++;
+    if(c.tr===1.5 || c.tr===0.5) omnis++;
+    if(c.tr>=2)    preds++;
+    if(c.water && c.tr>0) aquatics++;
+    if(c.id==='pond')      pond=true;
+    if(c.id==='stream')    stream=true;
+    if(c.id==='bee'||c.id==='butterfly') bee=true;
+    if(c.id==='compost')   compost=true;
+    if(c.id==='birdhouse') birdhouse=true;
+    if(c.id==='rockpile')  rock=true;
+    if(c.id==='fence')     fence=true;
+  });
+
+  // ── 2. Shannon-Wiener 多樣性指數（Pielou's J evenness）──
+  // H' = -Σ(p_i × ln(p_i))，再除以 ln(物種數) 正規化到 0~1
+  // 意義：物種個體分布越均勻 → 數值越高
+  var H = 0;
+  var speciesCount = Object.keys(counts).length;
+  if(total > 0 && speciesCount > 1){
+    var H_raw = 0;
+    Object.values(counts).forEach(function(n){
+      var p = n / total;
+      H_raw -= p * Math.log(p);
+    });
+    H = H_raw / Math.log(speciesCount);  // Pielou's J，0~1
+  }
+
+  // ── 3. 營養層完整性 ─────────────────────────────────────
+  var hasProducer  = plants > 0;
+  var hasHerbivore = herbs  > 0;
+  var hasOmnivore  = omnis  > 0;
+  var hasPredator  = preds  > 0;
+
+  var T = (hasProducer ? 1/3 : 0)
+        + ((hasHerbivore||hasOmnivore) ? 1/3 : 0)
+        + (hasPredator ? 1/3 : 0);
+
+  // 斷鏈懲罰（食物鏈斷掉 → 物種實際上無法存活）
+  if((hasHerbivore||hasOmnivore) && !hasProducer) T -= 0.25;
+  if(hasPredator && !hasHerbivore && !hasOmnivore) T -= 0.25;
+  T = Math.max(0, Math.min(1, T));
+
+  // ── 4. 水域加成 ─────────────────────────────────────────
+  var hasWater = pond || stream;
+  var A = 0;
+  if(hasWater && aquatics > 0) A = 0.10;
+  else if(aquatics > 0 && !hasWater) A = -0.10;
+
+  // ── 5. 授粉者加成 ────────────────────────────────────────
+  var P = (bee && plants > 0) ? 0.05 : 0;
+
+  // ── 6. 設施加成（上限 0.10）─────────────────────────────
+  var I = Math.min(
+    (compost ? 0.03 : 0) + (birdhouse ? 0.03 : 0) + (rock ? 0.02 : 0) + (fence ? 0.02 : 0),
+    0.10
+  );
+
+  // ── 7. 最終分數 ──────────────────────────────────────────
+  // raw 理論最大值 = 0.25 + 0.60 + 0.35 + 0.10 + 0.05 + 0.10 = 1.45
+  var raw = H*0.25 + T*0.60 + 0.35 + A + P + I + ecoBonus/100;
+  var score = Math.max(5, Math.min(100, Math.round(raw / 1.45 * 100)));
+  if(total === 0) score = 10;
+
+  // ── 8. 生成診斷訊息（科學化，說明原因）─────────────────
+  var pos = [], iss = [];
+
+  // Shannon 指數說明
+  if(total > 0){
+    var hPct = Math.round(H * 100);
+    if(H >= 0.8)      pos.push('Shannon 多樣性指數 '+hPct+'%（高均勻度）');
+    else if(H >= 0.5) pos.push('Shannon 多樣性指數 '+hPct+'%（中等）');
+    else if(speciesCount <= 1) iss.push({t:'warn', m:'只有 1 種物種，多樣性為零（J=0）'});
+    else              iss.push({t:'warn', m:'Shannon 均勻度低（'+hPct+'%）：某些物種數量過多'});
+  }
+
+  // 營養層
+  if(hasProducer)  pos.push('✔ 有生產者（植物）— 食物鏈基礎');
+  else if(total>0) iss.push({t:'bad', m:'❌ 缺少生產者！所有消費者都需要植物支撐'});
+
+  if(hasHerbivore||hasOmnivore) pos.push('✔ 有初級消費者（草食/雜食）');
+  if(hasPredator)  pos.push('✔ 有頂層掠食者 — 防止草食動物過量');
+
+  // 斷鏈警告
+  if((hasHerbivore||hasOmnivore) && !hasProducer)
+    iss.push({t:'bad', m:'草食動物無植物可吃，族群將崩潰（-0.25 懲罰）'});
+  if(hasPredator && !hasHerbivore && !hasOmnivore)
+    iss.push({t:'bad', m:'掠食者沒有獵物，將滅絕（-0.25 懲罰）'});
+
+  // 水域
+  if(hasWater && aquatics>0) pos.push('✔ 水陸雙生態系已建立');
+  if(aquatics>0 && !hasWater) iss.push({t:'bad', m:'水生生物需要池塘或溪流才能存活'});
+  if(hasWater && aquatics===0) iss.push({t:'warn', m:'池塘/溪流裡還沒有水生生物'});
+
+  // 授粉
+  if(bee && plants>0) pos.push('✔ 授粉者與植物共存，植物繁殖力提升');
+
+  // ── 9. GPS 計算 ─────────────────────────────────────────
+  var base = 1 + total*0.3;
+  var mult = score / 50;
+  var season = SEASONS[seasonIdx].gpsBonus;
+  var gps = Math.max(0.1, parseFloat((base * mult * (bee?1.2:1) * (compost?1.1:1) * season * gpsEventBonus).toFixed(1)));
+
+  return {
+    score, gps, pos, iss,
+    plants, herbs, omnis, preds, aquatics,
+    pond: hasWater, hasBee: bee, total,
+    // 科學指標（給 UI 顯示）
+    shannon: H,
+    shannonPct: Math.round(H*100),
+    trophic: T,
+    speciesTypes: speciesCount,
+  };
+}
+
+// ─── GRAPH CANVAS ─────────────────────────────────────────────────────────────
+var graphNodes=[], graphEdges=[];
+function buildGraph(data){
+  // collect unique species types present
+  var presentIds={};
+  cells.forEach(function(c){if(c)presentIds[c.id]=(presentIds[c.id]||0)+1;});
+  var ids=Object.keys(presentIds);
+  if(ids.length===0){graphNodes=[];graphEdges=[];return;}
+  var canvas=document.getElementById('ecoCanvas');
+  var W=canvas.width, H=canvas.height;
+  var cx=W/2, cy=H/2, r=Math.min(W,H)*0.37;
+  graphNodes=ids.map(function(id,i){
+    var angle=(2*Math.PI*i/ids.length)-Math.PI/2;
+    var item=findItem(id);
+    return{id:id,x:cx+r*Math.cos(angle),y:cy+r*Math.sin(angle),
+      emoji:item?(cells.find(function(c){return c&&c.id===id;})||{}).dEmoji||item.emoji:'❓',
+      count:presentIds[id],
+      tr:item?item.tr:0,color:item?item.color:'#888',
+      name:item?item.name:id};
+  });
+  // edges: predation / pollination / symbiosis
+  graphEdges=[];
+  var PRED={
+    fox:['rabbit','chicken'],wolf:['sheep','deer','rabbit'],eagle:['rabbit','chicken','bird','frog'],
+    snake:['rabbit','frog','shrimp'],owl:['rabbit','chicken','bird'],salmon:['carp','shrimp','frog'],
+    frog:['bee','butterfly'],bird:['bee','butterfly','berry']
+  };
+  var POLL={bee:['flower','berry','lotus','wheat'],butterfly:['flower','berry']};
+  var SYM={compost:['grass','flower','wheat','shrub','berry','tree'],birdhouse:['bird','owl','eagle'],
+    stream:['frog','duck','carp','salmon'],rockpile:['snake'],fence:['sheep','cow','rabbit','deer']};
+  ids.forEach(function(aid){
+    var preys=PRED[aid];
+    if(preys) preys.forEach(function(bid){
+      if(presentIds[bid]){graphEdges.push({a:aid,b:bid,type:'pred',color:'#ef4444'});}
+    });
+    var polls=POLL[aid];
+    if(polls) polls.forEach(function(bid){
+      if(presentIds[bid]){graphEdges.push({a:aid,b:bid,type:'poll',color:'#f59e0b'});}
+    });
+    var syms=SYM[aid];
+    if(syms) syms.forEach(function(bid){
+      if(presentIds[bid]){graphEdges.push({a:aid,b:bid,type:'sym',color:'#22c55e'});}
+    });
+  });
+}
+
+function drawGraph(){
+  var canvas=document.getElementById('ecoCanvas');
+  var ctx=canvas.getContext('2d');
+  var W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  // background
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#f4f2ee'; ctx.fillRect(0,0,W,H);
+  if(graphNodes.length===0){
+    ctx.fillStyle='#25a08c'; ctx.font='bold 13px DM Sans,sans-serif';
+    ctx.textAlign='center'; ctx.fillText('放置生物後顯示生態關係圖',W/2,H/2);
+    return;
+  }
+  // edges
+  graphEdges.forEach(function(e){
+    var a=graphNodes.find(function(n){return n.id===e.a;});
+    var b=graphNodes.find(function(n){return n.id===e.b;});
+    if(!a||!b)return;
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+    ctx.strokeStyle=e.color; ctx.lineWidth=1.5; ctx.globalAlpha=0.55;
+    ctx.stroke(); ctx.globalAlpha=1;
+    // arrowhead for predation
+    if(e.type==='pred'){
+      var dx=b.x-a.x,dy=b.y-a.y,len=Math.sqrt(dx*dx+dy*dy);
+      var ux=dx/len,uy=dy/len;
+      var mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+      ctx.beginPath();ctx.moveTo(mx,my);
+      ctx.lineTo(mx-uy*5-ux*8,my+ux*5-uy*8);
+      ctx.lineTo(mx+uy*5-ux*8,my-ux*5-uy*8);
+      ctx.closePath();ctx.fillStyle=e.color;ctx.globalAlpha=0.7;ctx.fill();ctx.globalAlpha=1;
+    }
+  });
+  // nodes
+  graphNodes.forEach(function(n){
+    // circle bg
+    ctx.beginPath();ctx.arc(n.x,n.y,18,0,2*Math.PI);
+    ctx.fillStyle=n.color||'#25a08c';ctx.globalAlpha=0.18;ctx.fill();ctx.globalAlpha=1;
+    ctx.strokeStyle=n.color||'#25a08c';ctx.lineWidth=2;ctx.stroke();
+    // emoji
+    ctx.font='16px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(n.emoji,n.x,n.y);
+    // count badge
+    if(n.count>1){
+      ctx.beginPath();ctx.arc(n.x+13,n.y-13,8,0,2*Math.PI);
+      ctx.fillStyle='#1a7f6e';ctx.fill();
+      ctx.fillStyle='#fff';ctx.font='bold 9px DM Sans,sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(n.count,n.x+13,n.y-13);
+    }
+    // label
+    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text').trim()||'#1e1c1a';ctx.font='bold 8px DM Sans,sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText(n.name,n.x,n.y+20);
+  });
+  // legend
+  ctx.font='bold 9px DM Sans,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';
+  [{color:'#ef4444',label:'捕食'},{color:'#f59e0b',label:'授粉'},{color:'#22c55e',label:'共生'}].forEach(function(l,i){
+    ctx.fillStyle=l.color;ctx.fillRect(8,H-30+i*0,12,3);
+    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text2').trim()||'#5c5752';ctx.fillText(l.label,24,H-30+i*0+1);
+  });
+  ctx.font='bold 9px DM Sans,sans-serif';ctx.textAlign='left';
+  [{color:'#ef4444',label:'捕食'},{color:'#f59e0b',label:'授粉'},{color:'#22c55e',label:'共生'}].forEach(function(l,i){
+    ctx.fillStyle=l.color;ctx.fillRect(6,H-42+i*12,14,3);
+    ctx.fillStyle='#1b3a2d';ctx.fillText(l.label,24,H-40+i*12);
+  });
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function renderLand(){
+  var g=document.getElementById('landGrid');
+  var html='';
+  for(var i=0;i<35;i++){
+    var c=cells[i];
+    if(c){
+      var pc=(c.id==='pond')?' pc':'';
+      html+='<div class="cell'+pc+'" data-i="'+i+'">'
+        +'<div class="cem">'+(c.dEmoji||c.emoji)+'</div>'
+        +'<div class="cnm">'+c.name+'</div>'
+        +'<div class="ctip">'+c.name+'<br>'+(ROLES[String(c.tr)]||'')+'</div>'
+        +'</div>';
+    } else {
+      html+='<div class="cell ec" data-i="'+i+'"><span class="cplus">+</span></div>';
+    }
+  }
+  g.innerHTML=html;
+  g.querySelectorAll('.cell').forEach(function(el){
+    el.onclick=function(){
+      var idx=parseInt(this.getAttribute('data-i'));
+      if(cells[idx]) openRm(idx); else clickCell(idx);
+    };
+  });
+}
+
+function renderTabs(){
+  var html='';
+  TABS.forEach(function(t){
+    html+='<div class="tab'+(activeTab===t.k?' on':'')+'" data-k="'+t.k+'">'+t.l+'</div>';
+  });
+  document.getElementById('tabsEl').innerHTML=html;
+  document.querySelectorAll('.tab').forEach(function(el){
+    el.onclick=function(){activeTab=this.getAttribute('data-k');selShop=null;updateSelBar();renderTabs();renderShop();};
+  });
+}
+
+function renderShop(){
+  var items=CAT[activeTab]||[];
+  var pond=hasPond();
+  var html='';
+  items.forEach(function(item){
+    var locked=item.water&&item.tr>0&&!pond;
+    var sel=selShop&&selShop.id===item.id;
+    html+='<div class="si'+(locked?' locked':'')+(sel?' on':'')+'" data-id="'+item.id+'">'
+      +'<div class="si-em">'+item.emoji+'</div>'
+      +'<div class="si-info">'
+      +'<div class="si-name">'+item.name+(locked?' 🔒':'')+'</div>'
+      +'<div class="si-desc">'+item.desc+'</div>'
+      +'</div>'
+      +'<div class="si-price">🪙'+item.cost+'</div>'
+      +'</div>';
+  });
+  document.getElementById('shopList').innerHTML=html;
+  document.querySelectorAll('.si').forEach(function(el){
+    el.onclick=function(){
+      var id=this.getAttribute('data-id');
+      var found=null;
+      (CAT[activeTab]||[]).forEach(function(x){if(x.id===id)found=x;});
+      if(!found)return;
+      if(found.water&&found.tr>0&&!hasPond()){toast('🔒 需先購買池塘才能放水生生物！');return;}
+      selShop=found;updateSelBar();renderShop();
+    };
+  });
+}
+
+function updateSelBar(){
+  var bar=document.getElementById('selBar'),hint=document.getElementById('hintBar');
+  if(selShop){
+    bar.style.display='block';
+    document.getElementById('selName').textContent=selShop.emoji+' '+selShop.name;
+    document.getElementById('selCost').textContent=selShop.cost;
+    hint.textContent='點空格放置 →';
+  } else {
+    bar.style.display='none';
+    hint.textContent='在右側商店選物種';
+  }
+}
+
+function renderAchievements(d){
+  var html='';
+  ACHIEVEMENTS.forEach(function(a){
+    var unlocked=unlockedAch[a.id]||a.check(d);
+    if(unlocked&&!unlockedAch[a.id]){
+      unlockedAch[a.id]=true;
+      toast('🏆 成就解鎖：'+a.name+'！');
+    }
+    html+='<div class="ach'+(unlocked?'':' locked')+'">'
+      +'<span style="font-size:16px">'+a.emoji+'</span>'
+      +'<div><div style="font-size:10px;font-weight:800">'+a.name+'</div>'
+      +'<div style="font-size:9px;color:var(--text2)">'+a.desc+'</div></div>'
+      +'</div>';
+  });
+  document.getElementById('achList').innerHTML=html;
+}
+
+function updateHUD(){
+  var d=computeGNN();
+  lastGps=d.gps;
+  document.getElementById('ecoScoreTop').textContent=d.score;
+  document.getElementById('gpsVal').textContent=d.gps.toFixed(1);
+  var fill=document.getElementById('ecoFill');
+  fill.style.width=d.score+'%';
+  fill.style.background=d.score>=70?'#1a7f6e':d.score>=40?'#e9c46a':'#ef4444';
+  // stats
+  document.getElementById('statPlants').textContent=d.plants;
+  document.getElementById('statHerb').textContent=d.herbs;
+  document.getElementById('statPred').textContent=d.preds;
+  document.getElementById('statAqua').textContent=d.aquatics;
+  document.getElementById('statTotal').textContent=d.total;
+  document.getElementById('statEarned').textContent=Math.floor(totalEarned);
+
+  // GNN 分析面板（科學化顯示）
+  var html='';
+  if(d.total===0){
+    html='<div style="font-size:10px;color:var(--text2)">放置生物後顯示生態分析</div>';
+  } else {
+    // Shannon 多樣性指標列
+    var sColor = d.shannon>=0.7?'#1a7f6e':d.shannon>=0.4?'#ca8a04':'#dc2626';
+    var sLabel = d.shannon>=0.7?'高':'d.shannon'>=0.4?'中':'低';
+    html += '<div style="margin-bottom:5px">'
+      +'<div style="font-size:9px;color:var(--text2);font-weight:800;margin-bottom:2px">📊 Shannon 多樣性指數（Pielou\'s J）</div>'
+      +'<div style="display:flex;align-items:center;gap:6px">'
+      +'<div style="flex:1;height:5px;background:var(--surface2);border-radius:99px;overflow:hidden">'
+      +'<div style="height:100%;width:'+d.shannonPct+'%;background:'+sColor+';border-radius:99px;transition:width .6s"></div>'
+      +'</div>'
+      +'<span style="font-size:9px;font-weight:900;color:'+sColor+'">'+d.shannonPct+'%</span>'
+      +'</div>'
+      +'<div style="font-size:9px;color:var(--text2);margin-top:1px">'+d.speciesTypes+' 種物種，越均勻越高</div>'
+      +'</div>';
+
+    // 食物鏈完整性
+    var tColor = d.trophic>=0.9?'#1a7f6e':d.trophic>=0.5?'#ca8a04':'#dc2626';
+    var tPct = Math.round(d.trophic*100);
+    html += '<div style="margin-bottom:6px">'
+      +'<div style="font-size:9px;color:var(--text2);font-weight:800;margin-bottom:2px">🔗 食物鏈完整性</div>'
+      +'<div style="display:flex;gap:4px">'
+      +'<span style="font-size:9px;padding:1px 6px;border-radius:5px;font-weight:800;background:'+(d.plants>0?'#d1fae5':'#fee2e2')+';color:'+(d.plants>0?'#065f46':'#991b1b')+'">🌿 生產者</span>'
+      +'<span style="font-size:9px;padding:1px 6px;border-radius:5px;font-weight:800;background:'+((d.herbs>0||d.omnis>0)?'#d1fae5':'#fee2e2')+';color:'+((d.herbs>0||d.omnis>0)?'#065f46':'#991b1b')+'">🐑 消費者</span>'
+      +'<span style="font-size:9px;padding:1px 6px;border-radius:5px;font-weight:800;background:'+(d.preds>0?'#d1fae5':'#fee2e2')+';color:'+(d.preds>0?'#065f46':'#991b1b')+'">🦅 掠食者</span>'
+      +'</div></div>';
+
+    // 正面訊息
+    d.pos.slice(0,2).forEach(function(p){
+      html+='<div class="gnn-row"><span class="gnn-msg" style="font-size:10px">'+p+'</span></div>';
+    });
+    // 問題警告
+    d.iss.slice(0,3).forEach(function(x){
+      html+='<div class="gnn-row"><span class="gnn-msg" style="font-size:10px;color:'+(x.t==='bad'?'#991b1b':'#92400e')+'">'+x.m+'</span></div>';
+    });
+    html+='<div style="font-size:8.5px;color:var(--text2);margin-top:3px;font-weight:700">📐 Shannon×25% + 食物鏈×60% + 加成×15%</div>';
+  }
+  document.getElementById('gnnOut').innerHTML=html;
+
+  renderAchievements(Object.assign({},d,{totalEarned:totalEarned}));
+  buildGraph(d);
+  drawGraph();
+}
+
+function updateAll(){renderLand();updateHUD();document.getElementById('coinVal').textContent=Math.floor(coins);}
+
+// ─── INTERACTIONS ──────────────────────────────────────────────────────────────
+function clickCell(idx){
+  if(!selShop){toast('請先在右側商店選擇物種 👆');return;}
+  if(selShop.water&&selShop.tr>0&&!hasPond()){toast('🔒 需先購買池塘才能放水生生物！');return;}
+  if(coins<selShop.cost){toast('💸 金幣不足！繼續等待收益累積');return;}
+  pendingIdx=idx;
+  document.getElementById('pmTitle').textContent='放置 '+selShop.name;
+  document.getElementById('pmEmoji').textContent=selShop.emoji;
+  document.getElementById('pmName').value='';
+  var opts='';
+  selShop.patterns.forEach(function(p,i){opts+='<option value="'+i+'">'+p+' 外觀 '+['A','B','C'][i]+'</option>';});
+  document.getElementById('pmPattern').innerHTML=opts;
+  document.getElementById('placeModal').style.display='flex';
+}
+
+document.getElementById('pmCancel').onclick=function(){document.getElementById('placeModal').style.display='none';pendingIdx=null;};
+document.getElementById('pmOk').onclick=function(){
+  if(pendingIdx===null)return;
+  var name=document.getElementById('pmName').value.trim()||selShop.name;
+  var pi=parseInt(document.getElementById('pmPattern').value);
+  coins-=selShop.cost;
+  var obj={};for(var k in selShop)obj[k]=selShop[k];
+  obj.name=name;obj.dEmoji=selShop.patterns[pi];
+  cells[pendingIdx]=obj;
+  document.getElementById('placeModal').style.display='none';
+  pendingIdx=null;
+  updateAll();
+  toast(selShop.patterns[pi]+' '+name+' 加入你的草地！');
+};
+
+function openRm(idx){
+  var c=cells[idx];if(!c)return;
+  rmIdx=idx;
+  document.getElementById('rmEmoji').textContent=c.dEmoji||c.emoji;
+  document.getElementById('rmName').textContent=c.name;
+  document.getElementById('rmRole').textContent=ROLES[String(c.tr)]||'生物';
+  document.getElementById('rmDesc').textContent=c.desc||'';
+  document.getElementById('rmModal').style.display='flex';
+}
+document.getElementById('rmClose').onclick=function(){document.getElementById('rmModal').style.display='none';rmIdx=null;};
+document.getElementById('rmDo').onclick=function(){
+  if(rmIdx===null)return;
+  var c=cells[rmIdx];
+  var refund=Math.floor(c.cost*0.5);
+  if(c.id==='pond'){for(var i=0;i<cells.length;i++){if(cells[i]&&cells[i].water&&cells[i].tr>0)cells[i]=null;}}
+  cells[rmIdx]=null;coins+=refund;
+  document.getElementById('rmModal').style.display='none';rmIdx=null;
+  updateAll();toast('已移除 '+c.name+'，退還 🪙'+refund);
+};
+document.getElementById('placeModal').onclick=function(e){if(e.target===this){this.style.display='none';pendingIdx=null;}};
+document.getElementById('rmModal').onclick=function(e){if(e.target===this){this.style.display='none';rmIdx=null;}};
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+var toastT=null;
+function toast(msg){
+  var el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('show');},2800);
+}
+
+// ─── COIN POP ANIMATION ───────────────────────────────────────────────────────
+var popAccum=0;
+function spawnCoinPop(){
+  var occupiedCells=[];
+  var g=document.getElementById('landGrid');
+  var divs=g.querySelectorAll('.cell:not(.ec)');
+  if(!divs.length)return;
+  var idx=Math.floor(Math.random()*divs.length);
+  var el=divs[idx];
+  var pop=document.createElement('div');
+  pop.className='coinpop';
+  pop.textContent='+'+Math.ceil(lastGps*0.5);
+  pop.style.left=(Math.random()*60+20)+'%';
+  pop.style.top='-8px';
+  el.appendChild(pop);
+  setTimeout(function(){if(pop.parentNode)pop.parentNode.removeChild(pop);},950);
+}
+
+// ─── SEASON & EVENTS ──────────────────────────────────────────────────────────
+function updateSeason(){
+  var s=SEASONS[seasonIdx];
+  var sb=document.getElementById('seasonBadge');
+  sb.textContent=s.name;
+  sb.style.cssText=s.style;
+}
+
+function triggerRandomEvent(){
+  if(activeEvent)return;
+  if(Math.random()>0.3)return; // 30% chance
+  var ev=EVENTS[Math.floor(Math.random()*EVENTS.length)];
+  activeEvent=ev; eventTimer=ev.duration*10;
+  ev.effect();
+  var bar=document.getElementById('eventBar');
+  bar.className='event-bar ev-'+ev.type;
+  bar.textContent=ev.msg;
+  bar.style.display='flex';
+  updateHUD();
+}
+
+// ─── MAIN LOOP ────────────────────────────────────────────────────────────────
+var tick=0;
+setInterval(function(){
+  tick++;
+  // coins
+  var earned=lastGps/10;
+  coins+=earned; totalEarned+=earned;
+  document.getElementById('coinVal').textContent=Math.floor(coins);
+  document.getElementById('statEarned').textContent=Math.floor(totalEarned);
+  // coin pop every ~3s
+  popAccum+=earned;
+  if(popAccum>=lastGps*3){popAccum=0;spawnCoinPop();}
+  // season tick
+  seasonTick++;
+  if(seasonTick>=SEASON_DUR*10){
+    seasonTick=0;
+    seasonIdx=(seasonIdx+1)%4;
+    updateSeason();
+    updateHUD();
+    toast(SEASONS[seasonIdx].name+' 到來！收益乘數 x'+SEASONS[seasonIdx].gpsBonus);
+  }
+  // event tick
+  if(activeEvent){
+    eventTimer--;
+    if(eventTimer<=0){
+      activeEvent.end();
+      activeEvent=null;
+      document.getElementById('eventBar').style.display='none';
+      updateHUD();
+    }
+  }
+  // random event every ~60s
+  if(tick%600===0) triggerRandomEvent();
+  // redraw graph every 5s
+  if(tick%50===0) drawGraph();
+},100);
+
+// ─── UPGRADES ─────────────────────────────────────────────────────────────────
+var UPGRADES = [
+  {id:'expand1', name:'草地擴充 I',  emoji:'🌱', desc:'增加 7 格（42格）', cost:500,  bought:false, effect:function(){expandGrid(7);}},
+  {id:'expand2', name:'草地擴充 II', emoji:'🌿', desc:'再增加 7 格（49格）',cost:1200, bought:false, requires:'expand1', effect:function(){expandGrid(7);}},
+  {id:'rainwater',name:'雨水收集',   emoji:'🌧️', desc:'乾旱季收益 +20%',   cost:400,  bought:false, effect:function(){droughtBonus=1.2;}},
+  {id:'solar',   name:'太陽能板',    emoji:'☀️',  desc:'夏季收益額外 +15%',cost:600,  bought:false, effect:function(){summerBonus=1.15;}},
+  {id:'composter',name:'大型堆肥機', emoji:'♻️',  desc:'堆肥效果 x2',      cost:800,  bought:false, effect:function(){compostMult=2;}},
+  {id:'sensor',  name:'生態感測器',  emoji:'📡',  desc:'GNN更新頻率加倍',  cost:350,  bought:false, effect:function(){sensorOn=true;}},
+];
+var droughtBonus=1, summerBonus=1, compostMult=1, sensorOn=false;
+var gridSize=35;
+
+function expandGrid(n){
+  gridSize+=n;
+  for(var i=0;i<n;i++) cells.push(null);
+  // update grid columns CSS dynamically
+  document.getElementById('landGrid').style.gridTemplateColumns='repeat(7,1fr)';
+  renderLand();
+  toast('草地擴充！現在有 '+gridSize+' 格');
+}
+
+function renderUpgrades(){
+  var html='';
+  UPGRADES.forEach(function(u){
+    var canBuy=!u.bought&&coins>=u.cost&&(!u.requires||UPGRADES.find(function(x){return x.id===u.requires;}).bought);
+    var locked=u.requires&&!UPGRADES.find(function(x){return x.id===u.requires;}).bought;
+    html+='<div style="display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:9px;border:1.5px solid var(--border);background:'+(u.bought?'#d1fae5':canBuy?'#fafffe':'#f9f9f9')+'">'
+      +'<span style="font-size:18px">'+u.emoji+'</span>'
+      +'<div style="flex:1;min-width:0">'
+      +  '<div style="font-size:11px;font-weight:800;color:var(--text)">'+u.name+(locked?' 🔒':'')+'</div>'
+      +  '<div style="font-size:9px;color:var(--text2)">'+u.desc+'</div>'
+      +'</div>'
+      +(u.bought
+        ? '<span style="font-size:10px;font-weight:800;color:#065f46;background:#d1fae5;padding:2px 7px;border-radius:5px">已購</span>'
+        : '<button data-uid="'+u.id+'" style="font-size:10px;font-weight:800;padding:4px 8px;border-radius:7px;border:1.5px solid var(--border);background:'+(canBuy?'var(--accent)':'#e5e7eb')+';color:'+(canBuy?'#fff':'#9ca3af')+';cursor:'+(canBuy?'pointer':'not-allowed')+';font-family:sans-serif">🪙'+u.cost+'</button>')
+      +'</div>';
+  });
+  document.getElementById('upgradeList').innerHTML=html;
+  document.querySelectorAll('[data-uid]').forEach(function(btn){
+    btn.onclick=function(){
+      var uid=this.getAttribute('data-uid');
+      var u=UPGRADES.find(function(x){return x.id===uid;});
+      if(!u||u.bought||coins<u.cost)return;
+      if(u.requires&&!UPGRADES.find(function(x){return x.id===u.requires;}).bought){toast('需要先購買前置升級！');return;}
+      coins-=u.cost; u.bought=true;
+      u.effect();
+      renderUpgrades();
+      document.getElementById('coinVal').textContent=Math.floor(coins);
+      toast('🎉 升級完成：'+u.name+'！');
+    };
+  });
+}
+
+// ─── GNN RECOMMENDATION ───────────────────────────────────────────────────────
+function renderGNNRec(){
+  var d=computeGNN();
+  var recs=[];
+  // logic: what's missing
+  if(d.plants===0) recs.push({emoji:'🌿',msg:'放置青草（🪙10）作為生產者基礎',id:'grass'});
+  else if(d.plants<3) recs.push({emoji:'🌿',msg:'再增加 1-2 種植物，強化生產者層',id:'flower'});
+  if(d.plants>0&&d.herbs===0) recs.push({emoji:'🐑',msg:'加入羊或兔子啟動草食層',id:'rabbit'});
+  if(d.herbs>=2&&d.preds===0) recs.push({emoji:'🦊',msg:'加入狐狸控制草食族群，完成食物鏈',id:'fox'});
+  if(!d.hasBee&&d.plants>=2) recs.push({emoji:'🐝',msg:'加入蜜蜂可讓植物收益 ×1.5',id:'bee'});
+  if(!d.pond&&d.total>=5) recs.push({emoji:'🏞️',msg:'建造池塘解鎖水生生態系',id:'pond'});
+  if(d.pond&&d.aquatics===0) recs.push({emoji:'🐟',msg:'池塘裡放入魚蝦，啟動水生生態',id:'carp'});
+  if(d.herbs>0&&d.plants>0&&d.preds>0&&!d.hasBee) recs.push({emoji:'🐝',msg:'蜜蜂授粉可進一步提升收益',id:'bee'});
+  if(recs.length===0) recs.push({emoji:'✅',msg:'生態鏈結構良好！嘗試擴充物種多樣性',id:null});
+
+  var html='';
+  recs.slice(0,3).forEach(function(r){
+    html+='<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;cursor:'+(r.id?'pointer':'default')+'" '+(r.id?'onclick="quickBuyRec(\''+r.id+'\')"':'')+' title="'+(r.id?'點擊快速選取':'')+'">'
+      +'<span style="font-size:16px">'+r.emoji+'</span>'
+      +'<span style="font-size:10.5px;color:var(--text);font-weight:600">'+r.msg+'</span>'
+      +(r.id?'<span style="font-size:9px;color:var(--accent2);font-weight:800;white-space:nowrap">點選 →</span>':'')
+      +'</div>';
+  });
+  document.getElementById('gnnRec').innerHTML=html;
+}
+
+function quickBuyRec(id){
+  var found=null;
+  Object.keys(CAT).forEach(function(k){CAT[k].forEach(function(x){if(x.id===id)found={item:x,cat:k};});});
+  if(!found)return;
+  activeTab=found.cat; selShop=found.item;
+  renderTabs(); renderShop(); updateSelBar();
+  toast('已選取 '+found.item.emoji+' '+found.item.name+'，點擊草地空格放置！');
+}
+
+// ─── ENCYCLOPEDIA ─────────────────────────────────────────────────────────────
+var encycTab='plant';
+function openEncyc(){
+  encycTab='plant';
+  renderEncycTabs(); renderEncycContent();
+  document.getElementById('encycModal').style.display='flex';
+}
+function renderEncycTabs(){
+  var html='';
+  TABS.forEach(function(t){
+    html+='<div class="tab'+(encycTab===t.k?' on':'')+'" onclick="switchEncycTab(\''+t.k+'\')">'+t.l+'</div>';
+  });
+  document.getElementById('encycTabs').innerHTML=html;
+}
+function switchEncycTab(k){encycTab=k;renderEncycTabs();renderEncycContent();}
+function renderEncycContent(){
+  var items=CAT[encycTab]||[];
+  var FOOD_CHAIN_DESC={
+    '-1':'設施類 — 不參與食物鏈，但提供生態加成',
+    '0':'生產者（Producer）— 通過光合作用製造能量，是食物鏈最底層',
+    '0.5':'初級消費者 / 授粉者 — 食用植物並幫助授粉',
+    '1':'初級消費者（Primary Consumer）— 直接以植物為食的草食動物',
+    '1.5':'次級消費者（Secondary Consumer）— 雜食或以小型動物為食',
+    '2':'三級消費者（Tertiary Consumer）— 肉食動物，控制獵物族群',
+    '2.5':'三級消費者（Tertiary Consumer）— 高效夜行掠食者',
+    '3':'頂層掠食者（Apex Predator）— 維持整體生態平衡的關鍵物種'
+  };
+  var html='';
+  items.forEach(function(item){
+    var owned=cells.filter(function(c){return c&&c.id===item.id;}).length;
+    html+='<div style="display:flex;gap:9px;padding:9px;border-radius:10px;border:1.5px solid var(--border);margin-bottom:6px;background:'+(owned>0?'#edfaf2':'#fafffe')+'">'
+      +'<div style="font-size:28px;width:36px;text-align:center;flex-shrink:0">'+item.emoji+'</div>'
+      +'<div style="flex:1">'
+      +  '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">'
+      +    '<span style="font-size:13px;font-weight:900;color:var(--text)">'+item.name+'</span>'
+      +    (owned>0?'<span style="font-size:9px;font-weight:700;background:var(--accentbg);color:var(--accent);padding:1px 6px;border-radius:4px">擁有 '+owned+' 隻</span>':'')
+      +    '<span style="font-size:9px;font-weight:800;color:var(--gold);margin-left:auto">🪙'+item.cost+'</span>'
+      +  '</div>'
+      +  '<div style="font-size:10px;color:var(--text);margin-bottom:3px">'+item.desc+'</div>'
+      +  '<div style="font-size:9px;color:var(--text3);background:var(--bg);padding:3px 8px;border-radius:5px;display:inline-block;border:1px solid var(--border)">'+(FOOD_CHAIN_DESC[String(item.tr)]||'')+'</div>'
+      +  (item.water?'<div style="font-size:9px;color:var(--sky);font-weight:700;margin-top:3px">💧 需要池塘</div>':'')
+      +'</div>'
+      +'</div>';
+  });
+  document.getElementById('encycContent').innerHTML=html;
+}
+
+// ─── ENHANCED INFO MODAL (replace openRm) ────────────────────────────────────
+function openRm(idx){
+  var c=cells[idx]; if(!c)return;
+  rmIdx=idx;
+  // use new info modal
+  document.getElementById('infoEmoji').textContent=c.dEmoji||c.emoji;
+  document.getElementById('infoTitle').textContent=c.name;
+  var item=findItem(c.id);
+  var gnnImpact=getGNNImpact(c);
+  var html='';
+  html+='<div style="background:var(--surface2);border-radius:9px;padding:9px;margin-bottom:8px;border:1px solid var(--border)">'
+    +'<div><b>角色：</b>'+(ROLES[String(c.tr)]||'生物')+'</div>'
+    +'<div><b>生態說明：</b>'+c.desc+'</div>'
+    +'<div><b>生態關係：</b>'+gnnImpact+'</div>'
+    +'</div>';
+  // patterns strip
+  if(item){
+    html+='<div style="margin-bottom:8px"><b style="font-size:11px">外觀變體：</b><div style="display:flex;gap:6px;margin-top:4px">';
+    item.patterns.forEach(function(p){html+='<span style="font-size:22px">'+p+'</span>';});
+    html+='</div></div>';
+  }
+  html+='<div style="font-size:10px;color:var(--text2)">移除退還 🪙'+Math.floor(c.cost*0.5)+'</div>';
+  document.getElementById('infoBody').innerHTML=html;
+  document.getElementById('infoDel').onclick=function(){
+    var refund=Math.floor(c.cost*0.5);
+    if(c.id==='pond'){for(var i=0;i<cells.length;i++){if(cells[i]&&cells[i].water&&cells[i].tr>0)cells[i]=null;}}
+    cells[rmIdx]=null; coins+=refund;
+    document.getElementById('infoModal').style.display='none'; rmIdx=null;
+    updateAll(); toast('已移除 '+c.name+'，退還 🪙'+refund);
+  };
+  document.getElementById('infoModal').style.display='flex';
+}
+
+function getGNNImpact(c){
+  var msgs=[];
+  var PRED_OF={rabbit:['草地植物'],sheep:['草地植物'],deer:['草地植物'],cow:['草地植物'],goat:['灌木'],horse:['草地植物'],
+    fox:['兔子','雞'],wolf:['羊','鹿'],eagle:['兔子','野鳥'],snake:['兔子','青蛙'],owl:['雞','野鳥'],
+    salmon:['鯉魚','蝦'],frog:['蜜蜂','昆蟲'],bee:['花朵（授粉）'],butterfly:['花朵（授粉）']};
+  var preys=PRED_OF[c.id];
+  if(preys) msgs.push('捕食/依賴：'+preys.join('、'));
+  if(c.tr===0) msgs.push('被草食動物捕食，是生產者');
+  if(c.id==='pond') msgs.push('解鎖水生生態，提升多樣性 +13分');
+  if(c.id==='bee'||c.id==='butterfly') msgs.push('授粉者，植物 GPS x1.5，GNN +9分');
+  if(c.id==='compost') msgs.push('土壤肥力加成，GPS x1.1，GNN +5分');
+  return msgs.length?msgs.join('；'):'基礎生態成員';
+}
+
+// ─── SAVE / LOAD ──────────────────────────────────────────────────────────────
+function saveGame(){ openSaveModal(); }
+function loadGame(){ openLoadModal(); }
+
+function resetGame(){
+  if(!confirm('確定要重置遊戲嗎？所有進度將清除。')) return;
+  localStorage.removeItem('ecochain_save');
+  coins=120; totalEarned=120; cells=[];
+  for(var i=0;i<35;i++) cells.push(null);
+  gridSize=35; seasonIdx=0; seasonTick=0; unlockedAch={};
+  UPGRADES.forEach(function(u){u.bought=false;});
+  droughtBonus=1; summerBonus=1; compostMult=1; sensorOn=false;
+  gpsEventBonus=1; ecoBonus=0;
+  selShop=null; activeEvent=null;
+  updateAll(); updateSeason(); renderUpgrades(); updateSelBar();
+  toast('🔄 遊戲已重置！');
+}
+
+// ─── MORE EVENTS ──────────────────────────────────────────────────────────────
+// extend existing EVENTS array
+EVENTS.push(
+  {type:'good', msg:'🦋 蝴蝶大量出現！授粉加成翻倍 30秒', duration:30, effect:function(){gpsEventBonus=1.35;}, end:function(){gpsEventBonus=1;}},
+  {type:'bad',  msg:'🌵 乾旱警報！水生生物收益暫降 20秒', duration:20, effect:function(){gpsEventBonus=0.65;}, end:function(){gpsEventBonus=1;}},
+  {type:'good', msg:'🌕 滿月之夜！夜行動物加成 x1.4', duration:25, effect:function(){gpsEventBonus=1.4;}, end:function(){gpsEventBonus=1;}},
+  {type:'info', msg:'🏫 學生參觀生態農場！SDG 教育加成', duration:20, effect:function(){gpsEventBonus=1.15;}, end:function(){gpsEventBonus=1;}},
+  {type:'bad',  msg:'🐀 老鼠入侵！消耗部分植物能量', duration:15, effect:function(){gpsEventBonus=0.8;}, end:function(){gpsEventBonus=1;}},
+  {type:'good', msg:'🌊 水位上升！水生生物活躍，池塘加成', duration:30, effect:function(){ecoBonus=8;}, end:function(){ecoBonus=0;}}
+);
+
+// ─── PATCH computeGNN to include upgrade bonuses ──────────────────────────────
+var _origCompute=computeGNN;
+computeGNN=function(){
+  var d=_origCompute();
+  var bonus=1;
+  if(seasonIdx===3&&droughtBonus>1) bonus*=droughtBonus;
+  if(seasonIdx===1&&summerBonus>1) bonus*=summerBonus;
+  d.gps=parseFloat((d.gps*bonus).toFixed(1));
+  return d;
+};
+
+// ─── DARK MODE ────────────────────────────────────────────────────────────────
+var darkMode=false;
+function toggleDark(){
+  darkMode=!darkMode;
+  var r=document.documentElement.style;
+  if(darkMode){
+    r.setProperty('--bg','#17161a');
+    r.setProperty('--surface','#1f1e22');
+    r.setProperty('--surface2','#27252a');
+    r.setProperty('--border','#363238');
+    r.setProperty('--border2','#4a464f');
+    r.setProperty('--text','#f0eee8');
+    r.setProperty('--text2','#a09a95');
+    r.setProperty('--text3','#706a65');
+    document.getElementById('darkBtn').textContent='☀️ 亮色';
+  } else {
+    r.setProperty('--bg','#f4f2ee');
+    r.setProperty('--surface','#ffffff');
+    r.setProperty('--surface2','#faf9f7');
+    r.setProperty('--border','#e4e0d8');
+    r.setProperty('--border2','#d5d0c8');
+    r.setProperty('--text','#1e1c1a');
+    r.setProperty('--text2','#5c5752');
+    r.setProperty('--text3','#9a948d');
+    document.getElementById('darkBtn').textContent='🌙 深色';
+  }
+}
+
+// ─── ENTITY LEVEL SYSTEM ──────────────────────────────────────────────────────
+// Each placed entity accumulates XP over time, levels up to boost GPS
+var entityXP={};   // key = cellIndex, val = xp
+var LEVEL_XP=[0,50,150,350,700,1200]; // xp needed for levels 1-5
+var LEVEL_BONUS=[1,1.05,1.12,1.22,1.35,1.5]; // GPS multiplier per level
+
+function getLevel(xp){
+  for(var l=LEVEL_XP.length-1;l>=0;l--){ if(xp>=LEVEL_XP[l]) return l; }
+  return 0;
+}
+function getLevelBonus(){
+  var totalMult=1;
+  cells.forEach(function(c,i){
+    if(!c) return;
+    var xp=entityXP[i]||0;
+    var lv=getLevel(xp);
+    totalMult+=((LEVEL_BONUS[lv]-1)*0.05); // aggregate small bonus
+  });
+  return Math.min(totalMult,2.0);
+}
+function tickEntityXP(){
+  cells.forEach(function(c,i){
+    if(!c) return;
+    var gain=lastGps>0?0.5:0.1;
+    entityXP[i]=(entityXP[i]||0)+gain;
+    var lv=getLevel(entityXP[i]);
+    var prev=getLevel((entityXP[i]||0)-gain);
+    if(lv>prev&&lv>0){
+      toast('⬆️ '+c.name+' 升到 Lv.'+lv+'！GPS加成 ×'+LEVEL_BONUS[lv]);
+      renderLand();
+    }
+  });
+}
+function getLvLabel(cellIdx){
+  var xp=entityXP[cellIdx]||0;
+  var lv=getLevel(xp);
+  if(lv===0) return '';
+  var stars=['','⭐','⭐⭐','🌟','🌟🌟','👑'];
+  return stars[lv]||'👑';
+}
+
+// ─── MARKET SYSTEM ────────────────────────────────────────────────────────────
+var MARKET_ITEMS=[
+  {id:'sp_rain',   name:'人工降雨',    emoji:'🌧️', cost:300, desc:'立即植物 GPS×2，持續 60 秒', type:'consumable'},
+  {id:'sp_fertilize',name:'特效肥料', emoji:'🧪',  cost:150, desc:'所有植物本回合 GPS+50%',      type:'consumable'},
+  {id:'sp_repel',  name:'驅蟲噴霧',   emoji:'🪲',  cost:200, desc:'下次壞事件跳過',              type:'consumable'},
+  {id:'sp_clone',  name:'物種複製',    emoji:'🧬',  cost:500, desc:'複製一格中的生物到相鄰空格',  type:'consumable'},
+  {id:'sp_heal',   name:'生態療癒',    emoji:'💚',  cost:250, desc:'GNN 健康度立即 +15',          type:'consumable'},
+  {id:'sp_magnet', name:'生物磁鐵',    emoji:'🧲',  cost:400, desc:'下次放置不扣金幣',            type:'consumable'},
+];
+var marketInventory={};  // id -> count
+var skipNextBadEvent=false;
+var freeNextPlace=false;
+var spRainTimer=0;
+
+function openMarket(){
+  renderMarketModal();
+  document.getElementById('marketModal').style.display='flex';
+}
+function renderMarketModal(){
+  var html='';
+  MARKET_ITEMS.forEach(function(item){
+    var owned=marketInventory[item.id]||0;
+    html+='<div style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;border:1.5px solid var(--border);margin-bottom:6px;background:var(--surface)">'
+      +'<span style="font-size:24px">'+item.emoji+'</span>'
+      +'<div style="flex:1">'
+      +  '<div style="font-size:12px;font-weight:800;color:var(--text)">'+item.name+'</div>'
+      +  '<div style="font-size:9px;color:var(--text2)">'+item.desc+'</div>'
+      +  (owned>0?'<div style="font-size:9px;color:var(--accent2);font-weight:800">庫存：'+owned+'</div>':'')
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">'
+      +  '<button data-mid="'+item.id+'" data-action="buy" style="font-size:10px;font-weight:800;padding:3px 9px;border-radius:7px;border:1.5px solid var(--border);background:var(--accent);color:#fff;cursor:pointer;font-family:sans-serif">買 🪙'+item.cost+'</button>'
+      +  (owned>0?'<button data-mid="'+item.id+'" data-action="use" style="font-size:10px;font-weight:800;padding:3px 9px;border-radius:7px;border:1.5px solid #6ee7b7;background:#d1fae5;color:#065f46;cursor:pointer;font-family:sans-serif">使用</button>':'')
+      +'</div>'
+      +'</div>';
+  });
+  document.getElementById('marketContent').innerHTML=html;
+  document.querySelectorAll('[data-mid]').forEach(function(btn){
+    btn.onclick=function(){
+      var mid=this.getAttribute('data-mid');
+      var action=this.getAttribute('data-action');
+      var item=MARKET_ITEMS.find(function(x){return x.id===mid;});
+      if(!item) return;
+      if(action==='buy'){
+        if(coins<item.cost){toast('💸 金幣不足！');return;}
+        coins-=item.cost;
+        marketInventory[mid]=(marketInventory[mid]||0)+1;
+        document.getElementById('coinVal').textContent=Math.floor(coins);
+        toast('🛒 購買成功：'+item.name);
+        renderMarketModal();
+      } else {
+        useMarketItem(mid);
+        renderMarketModal();
+      }
+    };
+  });
+}
+function useMarketItem(id){
+  var cnt=marketInventory[id]||0;
+  if(cnt<=0){toast('庫存不足！');return;}
+  marketInventory[id]=cnt-1;
+  if(id==='sp_rain'){gpsEventBonus=2;spRainTimer=600;toast('🌧️ 人工降雨！植物 GPS×2，60秒');}
+  else if(id==='sp_fertilize'){gpsEventBonus=1.5;setTimeout(function(){gpsEventBonus=1;},30000);toast('🧪 特效肥料！GPS+50% 30秒');}
+  else if(id==='sp_repel'){skipNextBadEvent=true;toast('🪲 驅蟲噴霧！下次壞事件跳過');}
+  else if(id==='sp_heal'){ecoBonus+=15;setTimeout(function(){ecoBonus=Math.max(0,ecoBonus-15);},20000);updateHUD();toast('💚 生態療癒！健康度 +15');}
+  else if(id==='sp_magnet'){freeNextPlace=true;toast('🧲 生物磁鐵！下次放置免費');}
+  else if(id==='sp_clone'){
+    // find first occupied cell and clone to random empty
+    var occupied=cells.map(function(c,i){return c?i:-1;}).filter(function(i){return i>=0;});
+    var empty=cells.map(function(c,i){return c?-1:i;}).filter(function(i){return i>=0;});
+    if(!occupied.length||!empty.length){toast('無法複製：需要有生物且有空格');return;}
+    var src=cells[occupied[Math.floor(Math.random()*occupied.length)]];
+    var dst=empty[Math.floor(Math.random()*empty.length)];
+    var obj={};for(var k in src)obj[k]=src[k];
+    obj.name=src.name+'(複製)';
+    cells[dst]=obj;
+    updateAll();
+    toast('🧬 '+src.name+' 已複製到空格！');
+  }
+}
+
+// ─── EVENT LOG ────────────────────────────────────────────────────────────────
+var eventLog=[];
+function addLog(msg,type){
+  var now=new Date();
+  var ts=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+  eventLog.unshift({msg:msg,type:type||'info',ts:ts});
+  if(eventLog.length>40) eventLog.pop();
+  renderLog();
+}
+function renderLog(){
+  var el=document.getElementById('logList');
+  if(!el) return;
+  var html='';
+  eventLog.slice(0,15).forEach(function(e){
+    var color=e.type==='good'?'#065f46':e.type==='bad'?'#991b1b':e.type==='warn'?'#92400e':'#1b3a2d';
+    var bg=e.type==='good'?'#d1fae5':e.type==='bad'?'#fee2e2':e.type==='warn'?'#fef3c7':'var(--surface2)';
+    html+='<div style="display:flex;gap:5px;padding:4px 6px;border-radius:6px;background:'+bg+';margin-bottom:3px">'
+      +'<span style="font-size:9px;color:#888;flex-shrink:0;margin-top:1px">'+e.ts+'</span>'
+      +'<span style="font-size:10px;font-weight:700;color:'+color+'">'+e.msg+'</span>'
+      +'</div>';
+  });
+  el.innerHTML=html||'<span style="font-size:10px;color:var(--text2)">尚無事件記錄...</span>';
+}
+
+// ─── PATCH toast to also log ──────────────────────────────────────────────────
+var _origToast=toast;
+toast=function(msg){
+  _origToast(msg);
+  var type='info';
+  if(msg.indexOf('⚠️')>=0||msg.indexOf('警告')>=0) type='warn';
+  if(msg.indexOf('❌')>=0||msg.indexOf('崩潰')>=0||msg.indexOf('入侵')>=0) type='bad';
+  if(msg.indexOf('🎉')>=0||msg.indexOf('成功')>=0||msg.indexOf('升級')>=0||msg.indexOf('成就')>=0) type='good';
+  addLog(msg,type);
+};
+
+// ─── PATCH triggerRandomEvent to respect skipNextBadEvent ────────────────────
+var _origTrigger=triggerRandomEvent;
+triggerRandomEvent=function(){
+  if(activeEvent) return;
+  if(Math.random()>0.3) return;
+  var pool=EVENTS.slice();
+  if(skipNextBadEvent){
+    pool=pool.filter(function(e){return e.type!=='bad';});
+    skipNextBadEvent=false;
+    addLog('🪲 驅蟲噴霧生效，跳過壞事件！','good');
+  }
+  var ev=pool[Math.floor(Math.random()*pool.length)];
+  activeEvent=ev; eventTimer=ev.duration*10;
+  ev.effect();
+  var bar=document.getElementById('eventBar');
+  bar.className='event-bar ev-'+ev.type;
+  bar.textContent=ev.msg;
+  bar.style.display='flex';
+  addLog(ev.msg, ev.type);
+  updateHUD();
+};
+
+// ─── PATCH confirmPlace to support free placement ────────────────────────────
+var _pmOkOrig=document.getElementById('pmOk').onclick;
+document.getElementById('pmOk').onclick=function(){
+  if(pendingIdx===null) return;
+  var name=document.getElementById('pmName').value.trim()||selShop.name;
+  var pi=parseInt(document.getElementById('pmPattern').value);
+  var cost=freeNextPlace?0:selShop.cost;
+  if(freeNextPlace){ freeNextPlace=false; addLog('🧲 磁鐵生效！免費放置 '+selShop.name,'good'); }
+  coins-=cost;
+  var obj={};for(var k in selShop)obj[k]=selShop[k];
+  obj.name=name; obj.dEmoji=selShop.patterns[pi];
+  cells[pendingIdx]=obj;
+  document.getElementById('placeModal').style.display='none';
+  pendingIdx=null;
+  updateAll();
+  addLog('🌱 放置了 '+obj.dEmoji+' '+name,'good');
+  toast(selShop.patterns[pi]+' '+name+' 加入你的草地！');
+};
+
+// ─── INJECT NEW UI ELEMENTS INTO DOM ─────────────────────────────────────────
+// (darkBtn, Market button, and Event Log already injected in new HTML)
+
+// Add Market Modal
+document.body.insertAdjacentHTML('beforeend',
+  '<div class="overlay" id="marketModal" style="display:none" onclick="if(event.target===this)this.style.display=\'none\'">'
+  +'<div class="modal" style="max-width:380px;max-height:85vh;overflow-y:auto">'
+  +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+  +'<div class="modal-title" style="margin:0">🛒 特殊市場</div>'
+  +'<button onclick="document.getElementById(\'marketModal\').style.display=\'none\'" style="font-size:18px;background:none;border:none;cursor:pointer;color:var(--text2)">✕</button>'
+  +'</div>'
+  +'<div id="marketContent"></div>'
+  +'</div>'
+  +'</div>'
+);
+
+// ─── PATCH renderLand to show level stars ─────────────────────────────────────
+var _origRenderLand=renderLand;
+renderLand=function(){
+  var g=document.getElementById('landGrid');
+  var html='';
+  for(var i=0;i<gridSize;i++){
+    var c=cells[i];
+    if(c){
+      var pc=(c.id==='pond')?' pc':'';
+      var lv=getLvLabel(i);
+      html+='<div class="cell'+pc+'" data-i="'+i+'">'
+        +'<div class="cem">'+(c.dEmoji||c.emoji)+'</div>'
+        +'<div class="cnm">'+c.name+'</div>'
+        +(lv?'<div style="font-size:7px;line-height:1;position:absolute;top:1px;right:2px">'+lv+'</div>':'')
+        +'<div class="ctip">'+c.name+'<br>'+(ROLES[String(c.tr)]||'')+'<br>Lv.'+getLevel(entityXP[i]||0)+'</div>'
+        +'</div>';
+    } else {
+      html+='<div class="cell ec" data-i="'+i+'"><span class="cplus">+</span></div>';
+    }
+  }
+  g.innerHTML=html;
+  g.querySelectorAll('.cell').forEach(function(el){
+    el.onclick=function(){
+      var idx=parseInt(this.getAttribute('data-i'));
+      if(cells[idx]) openRm(idx); else clickCell(idx);
+    };
+  });
+};
+
+// ─── PATCH main loop ──────────────────────────────────────────────────────────
+var _origSetInterval=window.__loopPatched;
+if(!_origSetInterval){
+  window.__loopPatched=true;
+  setInterval(function(){
+    renderUpgrades();
+    renderGNNRec();
+  }, 3000);
+}
+
+// XP tick every second
+setInterval(function(){
+  tickEntityXP();
+  // rain timer
+  if(spRainTimer>0){
+    spRainTimer--;
+    if(spRainTimer===0){gpsEventBonus=1;addLog('🌧️ 人工降雨效果結束','info');}
+  }
+},1000);
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderTabs(); renderShop(); updateAll(); updateSeason();
+renderUpgrades(); renderGNNRec();
+addLog('🌿 EcoChain 啟動！開始建立你的生態系','good');
+
+// auto-load on start if saves exist (open modal to let user choose)
+if(getAllSlots().length > 0 && !apiOnline){
+  // Don't auto-load — let user choose via modal
+}
+
+// ─── BACKEND INIT ─────────────────────────────────────────────────────────────
+// (apiStatus and leaderboard button already in new HTML)
+
+// Add leaderboard modal
+document.body.insertAdjacentHTML('beforeend',
+  '<div class="overlay" id="leaderboardModal" style="display:none" onclick="if(event.target===this)this.style.display=\'none\'">'
+  +'<div class="modal" style="max-width:420px;max-height:85vh;overflow-y:auto">'
+  +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+  +'<div class="modal-title" style="margin:0">🏆 全球排行榜</div>'
+  +'<button onclick="document.getElementById(\'leaderboardModal\').style.display=\'none\'" style="font-size:18px;background:none;border:none;cursor:pointer;color:var(--text2)">✕</button>'
+  +'</div>'
+  +'<div style="font-size:10px;color:var(--text2);margin-bottom:10px">玩家ID：<code style="background:var(--surface2);padding:2px 6px;border-radius:4px">'+PLAYER_ID+'</code></div>'
+  +'<div id="leaderboardContent"></div>'
+  +'</div>'
+  +'</div>'
+);
+
+// (gnnBadge already in new card-title HTML)
+
+// Patch updateAll to trigger GNN backend
+var _origUpdateAll2 = updateAll;
+updateAll = function(){
+  _origUpdateAll2();
+  triggerGNN();
+};
+
+// Patch renderGNNRec: skip rule-based when backend model active
+var _origRenderGNNRec2 = renderGNNRec;
+renderGNNRec = function(){
+  if(lastGNNResult) return;
+  _origRenderGNNRec2();
+};
+
+// ── Inject Save / Load Modals ─────────────────────────────────────────────────
+document.body.insertAdjacentHTML('beforeend', [
+  // Save Modal
+  '<div id="saveModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target===this)this.style.display=\'none\'">',
+    '<div style="background:var(--bg);border-radius:16px;padding:22px 22px 18px;width:340px;max-width:92vw;max-height:85vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25)">',
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">',
+        '<div style="font-weight:800;font-size:15px">💾 選擇存檔角色</div>',
+        '<button onclick="document.getElementById(\'saveModal\').style.display=\'none\'" style="font-size:18px;background:none;border:none;cursor:pointer;color:var(--text2)">✕</button>',
+      '</div>',
+      '<div id="saveModalContent"></div>',
+    '</div>',
+  '</div>',
+  // Load Modal
+  '<div id="loadModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target===this)this.style.display=\'none\'">',
+    '<div style="background:var(--bg);border-radius:16px;padding:22px 22px 18px;width:340px;max-width:92vw;max-height:85vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25)">',
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">',
+        '<div style="font-weight:800;font-size:15px">📂 選擇讀取角色</div>',
+        '<button onclick="document.getElementById(\'loadModal\').style.display=\'none\'" style="font-size:18px;background:none;border:none;cursor:pointer;color:var(--text2)">✕</button>',
+      '</div>',
+      '<div id="loadModalContent"></div>',
+    '</div>',
+  '</div>',
+].join(''));
+checkBackendHealth().then(function(){
+  var badge = document.getElementById('gnnBadge');
+  if(badge) badge.textContent = apiOnline ? '🤖 GNN v1' : '📐 規則模式';
+  if(apiOnline){
+    addLog('🟢 後端連線成功，GNN 模型已啟用','good');
+    triggerGNN();
+    // Don't auto-load — player chooses character via modal
+  }
+});
+setInterval(checkBackendHealth, 30000);
+// Auto cloud-sync: save all slots every 5 minutes (background, silent)
+setInterval(function(){
+  if(!apiOnline) return;
+  var slots = getAllSlots();
+  slots.forEach(function(slot){
+    cloudSaveSlot(slot.slotId, slot.charName, slot.saveData);
+  });
+}, 300000);
+
+</script>
+</body>
+</html>
+</body></html>

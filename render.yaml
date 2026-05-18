@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: ecochain-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: FIREBASE_CREDS_JSON
+        sync: false     # 在 Render Dashboard 貼上 serviceAccountKey.json 的完整內容
+      - key: TOKEN_SECRET
+        sync: false     # python -c "import secrets; print(secrets.token_hex(32))"
+      - key: RETRAIN_SECRET
+        sync: false
+      - key: ALLOW_ORIGINS
+        sync: false     # 填你的前端網址，例如 https://your-game.vercel.app
+      - key: ENV
+        value: production
