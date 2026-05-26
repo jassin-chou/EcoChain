@@ -135,6 +135,8 @@ def get_node_feature_dim() -> int:
     - 有 species2vec.pt → embed_dim + 1（count feature）
     - 沒有 → 5（原本的手工特徵，向後相容）
     """
+    if _FORCE_HANDCRAFTED_FEATURES:
+        return 5
     _, dim = _load_s2v()
     return dim + 1 if dim > 0 else 5
 
@@ -153,7 +155,7 @@ def build_graph(species_counts: dict) -> "Data":
       [trophic/4, is_water, is_terrain, log_count/5, degree]  → 5 維，人工規則
     """
     emb_matrix, emb_dim = _load_s2v()
-    use_s2v = (emb_matrix is not None)
+    use_s2v = (emb_matrix is not None) and not _FORCE_HANDCRAFTED_FEATURES
 
     # 空圖的 dummy 維度
     feat_dim = (emb_dim + 1) if use_s2v else 5
@@ -286,27 +288,34 @@ class EcoGNN(nn.Module):
 # Inference helper (singleton)
 # ──────────────────────────────────────────────
 _model: EcoGNN | None = None
+_FORCE_HANDCRAFTED_FEATURES = False
 
 def get_model() -> EcoGNN:
-    global _model
+    global _model, _FORCE_HANDCRAFTED_FEATURES
     if _model is None:
         in_dim = get_node_feature_dim()
-        _model = EcoGNN(in_dim=in_dim)
+        model = EcoGNN(in_dim=in_dim)
         if os.path.exists(MODEL_PATH):
             state = torch.load(MODEL_PATH, map_location="cpu", weights_only=True)
             # 若 checkpoint 的 in_dim 與當前不符（舊模型 5d vs 新模型 17d），重建模型
             first_key = "conv1.lin_src.weight"
+            if first_key not in state and "conv1.lin.weight" in state:
+                first_key = "conv1.lin.weight"
             if first_key in state:
                 ckpt_in_dim = state[first_key].shape[1]
                 if ckpt_in_dim != in_dim:
                     print(f"[GNN] Checkpoint in_dim={ckpt_in_dim} ≠ current in_dim={in_dim}")
                     print(f"[GNN] Rebuilding model with in_dim={ckpt_in_dim} (re-run train.py to retrain)")
-                    _model = EcoGNN(in_dim=ckpt_in_dim)
-            _model.load_state_dict(state)
+                    _FORCE_HANDCRAFTED_FEATURES = (ckpt_in_dim == 5)
+                    model = EcoGNN(in_dim=ckpt_in_dim)
+            model.load_state_dict(state)
+            model.eval()
+            _model = model
             print(f"[GNN] Loaded trained weights (in_dim={_model.in_dim}) from {MODEL_PATH}")
         else:
-            print("[GNN] No weights file found — using random init (run train.py first)")
-        _model.eval()
+            raise FileNotFoundError(
+                f"GNN weights not found at {MODEL_PATH}. Run `python train.py` first."
+            )
     return _model
 
 

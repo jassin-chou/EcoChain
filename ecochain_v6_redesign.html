@@ -909,7 +909,8 @@ async function callGNNAnalyze() {
       }),
       coins: coins,
       season: seasonIdx,
-      gps_event_bonus: gpsEventBonus,
+      gps_event_bonus: activeEvent ? 1 : gpsEventBonus,
+      event_id: activeEvent ? activeEvent.id : null,
     };
     var r = await fetch(BACKEND_URL + '/gnn/analyze/detail', {
       method: 'POST',
@@ -956,7 +957,8 @@ async function runImportance() {
         if (!c) return null;
         return { id: c.id, name: c.name, dEmoji: c.dEmoji || c.emoji, tr: c.tr, water: !!c.water };
       }),
-      coins: coins, season: seasonIdx, gps_event_bonus: gpsEventBonus,
+      coins: coins, season: seasonIdx, gps_event_bonus: activeEvent ? 1 : gpsEventBonus,
+      event_id: activeEvent ? activeEvent.id : null,
     };
     var r = await fetch(BACKEND_URL + '/gnn/importance', {
       method: 'POST',
@@ -2272,8 +2274,8 @@ setInterval(function(){
       updateHUD();
     }
   }
-  // random event every ~60s
-  if(tick%600===0) triggerRandomEvent();
+  // random event check every ~15s
+  if(tick%150===0) triggerRandomEvent();
   // redraw graph every 5s
   if(tick%50===0) drawGraph();
 },100);
@@ -2382,6 +2384,29 @@ function renderEncycTabs(){
 }
 function switchEncycTab(k){encycTab=k;renderEncycTabs();renderEncycContent();}
 function renderEncycContent(){
+  if(encycTab==='events'){
+    var totalWeight=EVENTS.reduce(function(sum,e){return sum+(e.weight||1);},0);
+    var html='<div style="font-size:10.5px;color:var(--text2);margin-bottom:10px;line-height:1.6">'
+      +'隨機事件約每 15 秒檢查一次，約 55% 機率觸發。事件會真的送到後端，影響生態分數與每秒金幣收益。'
+      +'</div>';
+    EVENTS.forEach(function(ev){
+      var chance=(ev.weight||1)/totalWeight;
+      var chanceLabel=chance>=0.10?'常見':(chance>=0.06?'普通':'稀有');
+      var typeLabel=ev.type==='good'?'正面':(ev.type==='bad'?'負面':'特殊');
+      var typeColor=ev.type==='good'?'var(--accent)':(ev.type==='bad'?'#ef4444':'var(--sky)');
+      html+='<div style="padding:9px;border-radius:10px;border:1.5px solid var(--border);margin-bottom:7px;background:#fafffe">'
+        +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+        +'<span style="font-size:13px;font-weight:900;color:var(--text)">'+ev.name+'</span>'
+        +'<span style="font-size:9px;font-weight:800;color:'+typeColor+';border:1px solid '+typeColor+';padding:1px 6px;border-radius:5px">'+typeLabel+'</span>'
+        +'<span style="font-size:9px;font-weight:800;color:var(--text3);margin-left:auto">'+chanceLabel+'</span>'
+        +'</div>'
+        +'<div style="font-size:10px;color:var(--text);margin-bottom:4px">'+ev.effectText+'</div>'
+        +'<div style="font-size:9px;color:var(--text3)">持續 '+ev.duration+' 秒，抽選權重 '+(ev.weight||1)+'</div>'
+        +'</div>';
+    });
+    document.getElementById('encycContent').innerHTML=html;
+    return;
+  }
   var items=CAT[encycTab]||[];
   var FOOD_CHAIN_DESC={
     '-1':'設施類 — 不參與食物鏈，但提供生態加成',
@@ -2488,6 +2513,25 @@ EVENTS.push(
   {type:'bad',  msg:'🐀 老鼠入侵！消耗部分植物能量', duration:15, effect:function(){gpsEventBonus=0.8;}, end:function(){gpsEventBonus=1;}},
   {type:'good', msg:'🌊 水位上升！水生生物活躍，池塘加成', duration:30, effect:function(){ecoBonus=8;}, end:function(){ecoBonus=0;}}
 );
+
+EVENTS = [
+  {id:'spring_rain', type:'good', weight:12, name:'春雨降臨', effectText:'生態分數 +3，每秒金幣收益 x1.20', msg:'🌧️ 春雨降臨：植物恢復生長，生態分數 +3，每秒金幣收益 x1.20', duration:30, effect:function(){gpsEventBonus=1.20;}, end:function(){gpsEventBonus=1;}},
+  {id:'locust_swarm', type:'bad', weight:8, name:'蝗蟲入侵', effectText:'生態分數 -8，每秒金幣收益 x0.65', msg:'🦗 蝗蟲入侵：植物被啃食，生態分數 -8，每秒金幣收益 x0.65', duration:20, effect:function(){gpsEventBonus=0.65;}, end:function(){gpsEventBonus=1;}},
+  {id:'forest_fire', type:'bad', weight:4, name:'森林火災', effectText:'生態分數 -12，每秒金幣收益 x0.55', msg:'🔥 森林火災：棲地受到破壞，生態分數 -12，每秒金幣收益 x0.55', duration:18, effect:function(){gpsEventBonus=0.55;}, end:function(){gpsEventBonus=1;}},
+  {id:'pollinator_boom', type:'good', weight:10, name:'授粉者繁榮', effectText:'生態分數 +6，每秒金幣收益 x1.25', msg:'🦋 授粉者繁榮：花粉傳播更順利，生態分數 +6，每秒金幣收益 x1.25', duration:30, effect:function(){gpsEventBonus=1.25;}, end:function(){gpsEventBonus=1;}},
+  {id:'drought', type:'bad', weight:7, name:'乾旱警報', effectText:'生態分數 -6，每秒金幣收益 x0.70', msg:'☀️ 乾旱警報：水域生物壓力上升，生態分數 -6，每秒金幣收益 x0.70', duration:25, effect:function(){gpsEventBonus=0.70;}, end:function(){gpsEventBonus=1;}},
+  {id:'full_moon', type:'good', weight:8, name:'滿月之夜', effectText:'生態分數 +2，每秒金幣收益 x1.15', msg:'🌕 滿月之夜：夜行動物更活躍，生態分數 +2，每秒金幣收益 x1.15', duration:25, effect:function(){gpsEventBonus=1.15;}, end:function(){gpsEventBonus=1;}},
+  {id:'education_visit', type:'info', weight:8, name:'SDG 教育參訪', effectText:'生態分數 +1，每秒金幣收益 x1.10', msg:'🏫 SDG 教育參訪：保育意識提升，生態分數 +1，每秒金幣收益 x1.10', duration:20, effect:function(){gpsEventBonus=1.10;}, end:function(){gpsEventBonus=1;}},
+  {id:'invasive_species', type:'bad', weight:5, name:'外來種入侵', effectText:'生態分數 -10，每秒金幣收益 x0.60', msg:'⚠️ 外來種入侵：食物網被干擾，生態分數 -10，每秒金幣收益 x0.60', duration:20, effect:function(){gpsEventBonus=0.60;}, end:function(){gpsEventBonus=1;}},
+  {id:'decomposer_bloom', type:'good', weight:10, name:'分解者繁榮', effectText:'生態分數 +5，每秒金幣收益 x1.18', msg:'🍄 分解者繁榮：養分循環變快，生態分數 +5，每秒金幣收益 x1.18', duration:30, effect:function(){gpsEventBonus=1.18;}, end:function(){gpsEventBonus=1;}},
+  {id:'water_cleanup', type:'good', weight:7, name:'水域清理', effectText:'生態分數 +7，每秒金幣收益 x1.22', msg:'💧 水域清理：水生棲地改善，生態分數 +7，每秒金幣收益 x1.22', duration:30, effect:function(){gpsEventBonus=1.22;}, end:function(){gpsEventBonus=1;}},
+  {id:'cold_wave', type:'bad', weight:7, name:'寒流來襲', effectText:'生態分數 -4，每秒金幣收益 x0.78', msg:'❄️ 寒流來襲：動植物活動力下降，生態分數 -4，每秒金幣收益 x0.78', duration:22, effect:function(){gpsEventBonus=0.78;}, end:function(){gpsEventBonus=1;}},
+  {id:'disease_outbreak', type:'bad', weight:5, name:'疾病爆發', effectText:'生態分數 -7，每秒金幣收益 x0.68', msg:'🧫 疾病爆發：族群健康下降，生態分數 -7，每秒金幣收益 x0.68', duration:20, effect:function(){gpsEventBonus=0.68;}, end:function(){gpsEventBonus=1;}},
+  {id:'habitat_restoration', type:'good', weight:6, name:'棲地復育', effectText:'生態分數 +8，每秒金幣收益 x1.24', msg:'🌱 棲地復育：物種有更好的生存空間，生態分數 +8，每秒金幣收益 x1.24', duration:30, effect:function(){gpsEventBonus=1.24;}, end:function(){gpsEventBonus=1;}},
+  {id:'seed_dispersal', type:'good', weight:9, name:'種子傳播', effectText:'生態分數 +4，每秒金幣收益 x1.16', msg:'🌰 種子傳播：植物擴散更順利，生態分數 +4，每秒金幣收益 x1.16', duration:26, effect:function(){gpsEventBonus=1.16;}, end:function(){gpsEventBonus=1;}},
+  {id:'research_grant', type:'info', weight:7, name:'研究補助', effectText:'生態分數 +2，每秒金幣收益 x1.12', msg:'🔬 研究補助：監測能力提升，生態分數 +2，每秒金幣收益 x1.12', duration:22, effect:function(){gpsEventBonus=1.12;}, end:function(){gpsEventBonus=1;}}
+];
+TABS.push({k:'events',l:'🎲 隨機事件'});
 
 // ─── PATCH computeGNN to include upgrade bonuses ──────────────────────────────
 var _origCompute=computeGNN;
@@ -2686,16 +2730,25 @@ toast=function(msg){
 
 // ─── PATCH triggerRandomEvent to respect skipNextBadEvent ────────────────────
 var _origTrigger=triggerRandomEvent;
+function pickWeightedEvent(pool){
+  var total=pool.reduce(function(sum,e){return sum+(e.weight||1);},0);
+  var roll=Math.random()*total;
+  for(var i=0;i<pool.length;i++){
+    roll-=(pool[i].weight||1);
+    if(roll<=0) return pool[i];
+  }
+  return pool[pool.length-1];
+}
 triggerRandomEvent=function(){
   if(activeEvent) return;
-  if(Math.random()>0.3) return;
+  if(Math.random()>0.55) return;
   var pool=EVENTS.slice();
   if(skipNextBadEvent){
     pool=pool.filter(function(e){return e.type!=='bad';});
     skipNextBadEvent=false;
     addLog('🪲 驅蟲噴霧生效，跳過壞事件！','good');
   }
-  var ev=pool[Math.floor(Math.random()*pool.length)];
+  var ev=pickWeightedEvent(pool);
   activeEvent=ev; eventTimer=ev.duration*10;
   ev.effect();
   var bar=document.getElementById('eventBar');

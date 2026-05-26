@@ -224,6 +224,7 @@ class AnalyzeRequest(BaseModel):
     coins: float = Field(default=0, ge=0, le=10_000_000)
     season: int = Field(default=0, ge=0, le=3)
     gps_event_bonus: float = Field(default=1.0, ge=0.5, le=3.0)   # 限制倍率範圍，防止刷分
+    event_id: Optional[str] = Field(default=None, max_length=40)
 
 
 class AnalyzeResponse(BaseModel):
@@ -291,6 +292,69 @@ class AnalyticsRequest(BaseModel):
 # ──────────────────────────────────────────────
 SEASON_GPS_BONUS = [1.1, 1.2, 0.9, 0.7]
 
+EVENT_EFFECTS = {
+    "spring_rain": {
+        "score_delta": 3.0, "gps_mult": 1.20,
+        "positive": "🌧️ 春雨讓植物恢復生長，生態系更穩定。",
+    },
+    "locust_swarm": {
+        "score_delta": -8.0, "gps_mult": 0.65,
+        "issue": "🦗 蝗蟲啃食植物，生產者受損，生態穩定度下降。",
+    },
+    "forest_fire": {
+        "score_delta": -12.0, "gps_mult": 0.55,
+        "issue": "🔥 森林火災造成棲地破壞，生物多樣性受到嚴重衝擊。",
+    },
+    "pollinator_boom": {
+        "score_delta": 6.0, "gps_mult": 1.25,
+        "positive": "🦋 授粉者增加，植物繁殖更順利，食物網韌性提升。",
+    },
+    "drought": {
+        "score_delta": -6.0, "gps_mult": 0.70,
+        "issue": "☀️ 乾旱讓水域生物壓力上升，整體生產力下降。",
+    },
+    "full_moon": {
+        "score_delta": 2.0, "gps_mult": 1.15,
+        "positive": "🌕 滿月讓夜行動物更活躍，捕食關係更完整。",
+    },
+    "education_visit": {
+        "score_delta": 1.0, "gps_mult": 1.10,
+        "positive": "🏫 SDG 教育參訪提升保育意識，玩家管理效率小幅提升。",
+    },
+    "invasive_species": {
+        "score_delta": -10.0, "gps_mult": 0.60,
+        "issue": "⚠️ 外來種干擾原生食物網，生態平衡明顯下降。",
+    },
+    "decomposer_bloom": {
+        "score_delta": 5.0, "gps_mult": 1.18,
+        "positive": "🍄 分解者繁榮，加快養分循環，土壤狀態改善。",
+    },
+    "water_cleanup": {
+        "score_delta": 7.0, "gps_mult": 1.22,
+        "positive": "💧 水域清理改善棲地品質，水生生物更容易存活。",
+    },
+    "cold_wave": {
+        "score_delta": -4.0, "gps_mult": 0.78,
+        "issue": "❄️ 寒流降低動植物活動力，生態系短暫降溫。",
+    },
+    "disease_outbreak": {
+        "score_delta": -7.0, "gps_mult": 0.68,
+        "issue": "🧫 疾病爆發讓族群健康下降，物種互動變得脆弱。",
+    },
+    "habitat_restoration": {
+        "score_delta": 8.0, "gps_mult": 1.24,
+        "positive": "🌱 棲地復育成功，物種有更好的生存空間。",
+    },
+    "seed_dispersal": {
+        "score_delta": 4.0, "gps_mult": 1.16,
+        "positive": "🌰 種子傳播擴散植物，生態系基礎更穩。",
+    },
+    "research_grant": {
+        "score_delta": 2.0, "gps_mult": 1.12,
+        "positive": "🔬 研究補助提升監測能力，管理效率小幅提升。",
+    },
+}
+
 SPECIES_EMOJI = {
     "grass":"🌿","flower":"🌸","berry":"🫐","tree":"🌳","shrub":"🍃","mushroom":"🍄",
     "wheat":"🌾","cactus":"🌵","lotus":"🪷","seaweed":"🪸","sheep":"🐑","cow":"🐄",
@@ -333,6 +397,35 @@ def compute_gps(score: float, counts: dict, season: int, event_bonus: float) -> 
     if compost: gps *= 1.1
     gps *= season_bonus * event_bonus
     return round(max(0.1, gps), 1)
+
+
+def apply_event_effects(
+    event_id: Optional[str],
+    score: float,
+    gps: float,
+    issues: list,
+    positives: list,
+) -> tuple[float, float, dict | None]:
+    if not event_id:
+        return score, gps, None
+
+    event = EVENT_EFFECTS.get(event_id)
+    if not event:
+        return score, gps, None
+
+    adjusted_score = round(max(5.0, min(100.0, score + event["score_delta"])), 1)
+    adjusted_gps = round(max(0.1, gps * event["gps_mult"]), 1)
+
+    if event.get("issue"):
+        issues.append({"type": "event", "msg": event["issue"]})
+    if event.get("positive"):
+        positives.append(event["positive"])
+
+    return adjusted_score, adjusted_gps, {
+        "id": event_id,
+        "score_delta": event["score_delta"],
+        "gps_mult": event["gps_mult"],
+    }
 
 
 def build_issues_positives(score: float, counts: dict) -> tuple[list, list, float]:
@@ -529,6 +622,7 @@ def analyze(req: AnalyzeRequest, bg: BackgroundTasks):
     top_rec = result["top_recommendations"]
     gps     = compute_gps(score, counts, req.season, req.gps_event_bonus)
     issues, positives, _ = build_issues_positives(score, counts)
+    score, gps, _event = apply_event_effects(req.event_id, score, gps, issues, positives)
     return AnalyzeResponse(
         score=score, gps=gps,
         top_recommendations=top_rec,
@@ -544,6 +638,7 @@ def analyze_detail(req: AnalyzeRequest):
     top_rec = result["top_recommendations"]
     gps     = compute_gps(score, counts, req.season, req.gps_event_bonus)
     issues, positives, shannon = build_issues_positives(score, counts)
+    score, gps, event_meta = apply_event_effects(req.event_id, score, gps, issues, positives)
 
     if _HAS_REC_SOURCE:
         rec_with_source = _rec_with_source(counts)
@@ -569,6 +664,7 @@ def analyze_detail(req: AnalyzeRequest):
         "recommendations": rec_enriched,
         "issues": issues, "positives": positives,
         "counts": counts, "shannon": round(shannon, 3),
+        "event_effect": event_meta,
         "model_version": "gnn-v3",
     }
 
@@ -654,12 +750,22 @@ def species_importance(req: AnalyzeRequest):
         return {"baseline": 0, "impact": [], "chain_effects": []}
 
     baseline = predict(counts)["score"]
+    baseline_gps = compute_gps(baseline, counts, req.season, req.gps_event_bonus)
+    baseline_issues: list = []
+    baseline_positives: list = []
+    baseline, _baseline_gps, event_meta = apply_event_effects(
+        req.event_id, baseline, baseline_gps, baseline_issues, baseline_positives
+    )
 
     impact = {}
     for species in counts:
         reduced = {k: v for k, v in counts.items() if k != species}
         if reduced:
             new_score = predict(reduced)["score"]
+            new_gps = compute_gps(new_score, reduced, req.season, req.gps_event_bonus)
+            new_score, _new_gps, _ = apply_event_effects(
+                req.event_id, new_score, new_gps, [], []
+            )
         else:
             new_score = 5.0  # 空圖最低分
         impact[species] = round(baseline - new_score, 1)
@@ -696,6 +802,7 @@ def species_importance(req: AnalyzeRequest):
 
     return {
         "baseline": baseline,
+        "event_effect": event_meta,
         "impact": [
             {
                 "species": s,

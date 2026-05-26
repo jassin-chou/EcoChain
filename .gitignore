@@ -2,6 +2,7 @@
 # Firebase Service Account 金鑰（含 RSA 私鑰）
 serviceAccountKey.json
 *serviceAccount*.json
+*serviceAccount*.zip
 firebase-adminsdk*.json
 
 
