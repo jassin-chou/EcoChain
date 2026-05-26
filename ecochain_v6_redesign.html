@@ -958,6 +958,19 @@ async function checkBackendHealth() {
 // ── GNN API call (replaces the local computeGNN for the HUD score) ────────────
 var gnnDebounceTimer = null;
 var lastGNNResult = null;
+var gnnHealBonus = 0;
+
+function hasCompost(){
+  return cells.some(function(c){return c && c.id === 'compost';});
+}
+
+function getUpgradeGpsBonus(){
+  var bonus = 1;
+  if (seasonIdx === 3 && droughtBonus > 1) bonus *= droughtBonus;
+  if (seasonIdx === 1 && summerBonus > 1) bonus *= summerBonus;
+  if (hasCompost() && compostMult > 1) bonus *= (1 + 0.1 * (compostMult - 1));
+  return bonus;
+}
 
 async function callGNNAnalyze() {
   if (!apiOnline) return null;
@@ -971,8 +984,12 @@ async function callGNNAnalyze() {
       }),
       coins: coins,
       season: seasonIdx,
+<<<<<<< Updated upstream
       gps_event_bonus: activeEvent ? 1 : gpsEventBonus,
       event_id: activeEvent ? activeEvent.id : null,
+=======
+      gps_event_bonus: gpsEventBonus * getUpgradeGpsBonus(),
+>>>>>>> Stashed changes
     };
     var r = await fetch(BACKEND_URL + '/gnn/analyze/detail', {
       method: 'POST',
@@ -994,7 +1011,7 @@ async function callGNNAnalyze() {
 // Debounced trigger: call backend GNN max once per 2s after cell changes
 function triggerGNN() {
   clearTimeout(gnnDebounceTimer);
-  gnnDebounceTimer = setTimeout(callGNNAnalyze, 2000);
+  gnnDebounceTimer = setTimeout(callGNNAnalyze, sensorOn ? 1000 : 2000);
 }
 
 // ── Species Importance Analysis ───────────────────────────────────────────────
@@ -1107,7 +1124,7 @@ function renderImportance(data) {
 function updateGNNPanel(data) {
   if (!data) return;
 
-  var score = data.score;
+  var score = Math.min(100, data.score + (gnnHealBonus || 0));
   var gps   = data.gps;
   lastGps = gps;
 
@@ -1525,8 +1542,10 @@ function _renderLoadSlots(slots) {
     + '</div>'
     + '</div>';
   slots.forEach(function(slot, i) {
-    var meta = slot.savedAt
-      ? '🌿 生態分 ' + Math.round(slot.ecoScore||0) + '  ·  ' + (slot.speciesCount||0) + ' 物種  ·  ' + new Date(slot.savedAt).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+    var hasProgressMeta = !!slot.savedAt || !!slot.ecoScore || !!slot.speciesCount;
+    var meta = hasProgressMeta
+      ? '🌿 生態分 ' + Math.round(slot.ecoScore||0) + '  ·  ' + (slot.speciesCount||0) + ' 物種'
+        + (slot.savedAt ? '  ·  ' + new Date(slot.savedAt).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '')
       : '輸入密碼即可讀取這個角色';
     html += '<div style="border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--surface2)">'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
@@ -1579,6 +1598,7 @@ async function doLoadSlot(idx) {
     slots[idx].saveData = cloudData;
     slots[idx].ecoScore = cloudData.ecoScore || slot.ecoScore;
     slots[idx].speciesCount = cloudData.speciesCount || slot.speciesCount;
+    slots[idx].savedAt = slot.savedAt || Date.now();
     saveAllSlots(slots);
   }
   restoreSaveData(sd);
@@ -1931,7 +1951,8 @@ function computeGNN(){
   var base = 1 + total*0.3;
   var mult = score / 50;
   var season = SEASONS[seasonIdx].gpsBonus;
-  var gps = Math.max(0.1, parseFloat((base * mult * (bee?1.2:1) * (compost?1.1:1) * season * gpsEventBonus).toFixed(1)));
+  var compostBonus = compost ? (1 + 0.1 * compostMult) : 1;
+  var gps = Math.max(0.1, parseFloat((base * mult * (bee?1.2:1) * compostBonus * season * gpsEventBonus).toFixed(1)));
 
   return {
     score, gps, pos, iss,
@@ -2360,8 +2381,8 @@ var UPGRADES = [
   {id:'expand2', name:'草地擴充 II', emoji:'🌿', desc:'再增加 7 格（49格）',cost:1200, bought:false, requires:'expand1', effect:function(){expandGrid(7);}},
   {id:'rainwater',name:'雨水收集',   emoji:'🌧️', desc:'乾旱季收益 +20%',   cost:400,  bought:false, effect:function(){droughtBonus=1.2;}},
   {id:'solar',   name:'太陽能板',    emoji:'☀️',  desc:'夏季收益額外 +15%',cost:600,  bought:false, effect:function(){summerBonus=1.15;}},
-  {id:'composter',name:'大型堆肥機', emoji:'♻️',  desc:'堆肥效果 x2',      cost:800,  bought:false, effect:function(){compostMult=2;}},
-  {id:'sensor',  name:'生態感測器',  emoji:'📡',  desc:'GNN更新頻率加倍',  cost:350,  bought:false, effect:function(){sensorOn=true;}},
+  {id:'composter',name:'大型堆肥機', emoji:'♻️',  desc:'有堆肥時收益加成翻倍', cost:800,  bought:false, effect:function(){compostMult=2;}},
+  {id:'sensor',  name:'生態感測器',  emoji:'📡',  desc:'生態報告更新更快',  cost:350,  bought:false, effect:function(){sensorOn=true; triggerGNN();}},
 ];
 var droughtBonus=1, summerBonus=1, compostMult=1, sensorOn=false;
 var gridSize=35;
@@ -2689,11 +2710,11 @@ function getLvLabel(cellIdx){
 
 // ─── MARKET SYSTEM ────────────────────────────────────────────────────────────
 var MARKET_ITEMS=[
-  {id:'sp_rain',   name:'人工降雨',    emoji:'🌧️', cost:300, desc:'立即植物 GPS×2，持續 60 秒', type:'consumable'},
-  {id:'sp_fertilize',name:'特效肥料', emoji:'🧪',  cost:150, desc:'所有植物本回合 GPS+50%',      type:'consumable'},
-  {id:'sp_repel',  name:'驅蟲噴霧',   emoji:'🪲',  cost:200, desc:'下次壞事件跳過',              type:'consumable'},
-  {id:'sp_clone',  name:'物種複製',    emoji:'🧬',  cost:500, desc:'複製一格中的生物到相鄰空格',  type:'consumable'},
-  {id:'sp_heal',   name:'生態療癒',    emoji:'💚',  cost:250, desc:'GNN 健康度立即 +15',          type:'consumable'},
+  {id:'sp_rain',   name:'人工降雨',    emoji:'🌧️', cost:300, desc:'整體收益 ×2，持續 60 秒',      type:'consumable'},
+  {id:'sp_fertilize',name:'特效肥料', emoji:'🧪',  cost:150, desc:'整體收益 +50%，持續 30 秒',    type:'consumable'},
+  {id:'sp_repel',  name:'驅蟲噴霧',   emoji:'🪲',  cost:200, desc:'下次事件不會是壞事件',          type:'consumable'},
+  {id:'sp_clone',  name:'物種複製',    emoji:'🧬',  cost:500, desc:'複製一格生物到隨機空格',      type:'consumable'},
+  {id:'sp_heal',   name:'生態療癒',    emoji:'💚',  cost:250, desc:'健康度暫時 +15，持續 20 秒',  type:'consumable'},
   {id:'sp_magnet', name:'生物磁鐵',    emoji:'🧲',  cost:400, desc:'下次放置不扣金幣',            type:'consumable'},
 ];
 var marketInventory={};  // id -> count
@@ -2747,10 +2768,10 @@ function useMarketItem(id){
   var cnt=marketInventory[id]||0;
   if(cnt<=0){toast('庫存不足！');return;}
   marketInventory[id]=cnt-1;
-  if(id==='sp_rain'){gpsEventBonus=2;spRainTimer=600;toast('🌧️ 人工降雨！植物 GPS×2，60秒');}
-  else if(id==='sp_fertilize'){gpsEventBonus=1.5;setTimeout(function(){gpsEventBonus=1;},30000);toast('🧪 特效肥料！GPS+50% 30秒');}
-  else if(id==='sp_repel'){skipNextBadEvent=true;toast('🪲 驅蟲噴霧！下次壞事件跳過');}
-  else if(id==='sp_heal'){ecoBonus+=15;setTimeout(function(){ecoBonus=Math.max(0,ecoBonus-15);},20000);updateHUD();toast('💚 生態療癒！健康度 +15');}
+  if(id==='sp_rain'){gpsEventBonus=2;spRainTimer=600;updateAll();triggerGNN();toast('🌧️ 人工降雨！整體收益 ×2，60秒');}
+  else if(id==='sp_fertilize'){gpsEventBonus=1.5;updateAll();triggerGNN();setTimeout(function(){gpsEventBonus=1;updateAll();triggerGNN();},30000);toast('🧪 特效肥料！整體收益 +50%，30秒');}
+  else if(id==='sp_repel'){skipNextBadEvent=true;toast('🪲 驅蟲噴霧！下次事件避開壞事件');}
+  else if(id==='sp_heal'){ecoBonus+=15;gnnHealBonus+=15;updateHUD();triggerGNN();setTimeout(function(){ecoBonus=Math.max(0,ecoBonus-15);gnnHealBonus=Math.max(0,gnnHealBonus-15);updateHUD();triggerGNN();},20000);toast('💚 生態療癒！健康度暫時 +15');}
   else if(id==='sp_magnet'){freeNextPlace=true;toast('🧲 生物磁鐵！下次放置免費');}
   else if(id==='sp_clone'){
     // find first occupied cell and clone to random empty
@@ -2913,7 +2934,7 @@ setInterval(function(){
   // rain timer
   if(spRainTimer>0){
     spRainTimer--;
-    if(spRainTimer===0){gpsEventBonus=1;addLog('🌧️ 人工降雨效果結束','info');}
+    if(spRainTimer===0){gpsEventBonus=1;updateAll();triggerGNN();addLog('🌧️ 人工降雨效果結束','info');}
   }
 },1000);
 
