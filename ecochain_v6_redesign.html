@@ -50,6 +50,12 @@
   --radius-sm: 9px;
   --shadow:   0 1px 4px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
   --shadow-sm:0 1px 3px rgba(0,0,0,.08);
+  --season-bg:#f4f2ee;
+  --season-cell:#f4f2ee;
+  --season-cell2:#faf9f7;
+  --season-border:#e4e0d8;
+  --season-accent:#1a7f6e;
+  --season-soft:#e8f5f2;
 }
 
 body{
@@ -204,20 +210,24 @@ body{
   display:none;flex-shrink:0;
 }
 
-.lgrid-wrap{flex:1;overflow-y:auto;padding:12px;}
+.lgrid-wrap{
+  flex:1;overflow-y:auto;padding:12px;
+  background:linear-gradient(180deg,var(--season-bg),var(--surface));
+  transition:background .5s;
+}
 .lgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
 
 .cell{
   aspect-ratio:1;border-radius:10px;
-  border:1.5px solid var(--border);
-  background:var(--surface2);
+  border:1.5px solid var(--season-border);
+  background:var(--season-cell2);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  cursor:pointer;transition:transform .12s,border-color .15s,box-shadow .15s;
+  cursor:pointer;transition:transform .12s,border-color .15s,box-shadow .15s,background .5s;
   position:relative;overflow:visible;user-select:none;
 }
-.cell:hover{transform:scale(1.1);z-index:4;border-color:var(--accent2);box-shadow:0 2px 8px rgba(26,127,110,.2);}
-.cell.ec{background:var(--bg);}
-.cell.ec:hover{background:var(--accentbg);}
+.cell:hover{transform:scale(1.1);z-index:4;border-color:var(--season-accent);box-shadow:0 2px 8px rgba(26,127,110,.2);}
+.cell.ec{background:var(--season-cell);}
+.cell.ec:hover{background:var(--season-soft);}
 .cell.pc{background:linear-gradient(135deg,#c8eefb,#90d8ef);border-color:var(--sky)!important;}
 .cell.hl{border-color:#fbbf24!important;box-shadow:0 0 0 2px #fef3c7;}
 .cem{font-size:18px;line-height:1.1;}
@@ -241,10 +251,11 @@ body{
    CENTER — Graph + Eco info
 ══════════════════════════════════════════ */
 .center-col{
-  background:var(--bg);
+  background:linear-gradient(180deg,var(--season-bg),var(--bg) 58%);
   overflow-y:auto;
   padding:12px;
   display:flex;flex-direction:column;gap:12px;
+  transition:background .5s;
 }
 
 /* ══════════════════════════════════════════
@@ -291,7 +302,44 @@ body{
 }
 #ecoCanvas{
   width:100%;height:auto;display:block;
-  background:var(--bg);
+  background:var(--season-bg);
+}
+.season-panel{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px 14px;
+  align-items:center;
+  background:var(--surface);
+  border:1px solid var(--season-border);
+  border-left:5px solid var(--season-accent);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-sm);
+  padding:12px 14px;
+}
+.season-title{
+  font-family:'Sora',sans-serif;
+  font-size:13px;font-weight:800;color:var(--text);
+  display:flex;align-items:center;gap:7px;
+}
+.season-effect{font-size:10.5px;color:var(--text2);line-height:1.55;margin-top:3px;}
+.season-mult{
+  font-family:'Sora',sans-serif;
+  font-size:18px;font-weight:800;color:var(--season-accent);
+  white-space:nowrap;
+}
+.season-progress{
+  grid-column:1/-1;
+  height:7px;
+  background:var(--surface2);
+  border-radius:99px;
+  overflow:hidden;
+}
+.season-progress-fill{
+  height:100%;
+  width:0%;
+  background:var(--season-accent);
+  border-radius:99px;
+  transition:width .3s linear,background .5s;
 }
 .graph-card .card-head{padding:10px 14px;}
 .graph-card .card-title{font-size:13px;}
@@ -657,6 +705,15 @@ body{
       <canvas id="ecoCanvas" width="960" height="540"></canvas>
     </div>
 
+    <div class="season-panel" id="seasonPanel">
+      <div>
+        <div class="season-title"><span id="seasonPanelName">🌱 春季</span></div>
+        <div class="season-effect" id="seasonEffect">萬物復甦，整體收益 +10%。</div>
+      </div>
+      <div class="season-mult" id="seasonMultiplier">x1.10</div>
+      <div class="season-progress"><div class="season-progress-fill" id="seasonProgress"></div></div>
+    </div>
+
     <!-- GNN ANALYSIS -->
     <div class="card">
       <div class="card-head">
@@ -958,6 +1015,19 @@ async function checkBackendHealth() {
 // ── GNN API call (replaces the local computeGNN for the HUD score) ────────────
 var gnnDebounceTimer = null;
 var lastGNNResult = null;
+var gnnHealBonus = 0;
+
+function hasCompost(){
+  return cells.some(function(c){ return c && c.id === 'compost'; });
+}
+
+function getUpgradeGpsBonus(){
+  var bonus = 1;
+  if(seasonIdx === 3 && droughtBonus > 1) bonus *= droughtBonus;
+  if(seasonIdx === 1 && summerBonus > 1) bonus *= summerBonus;
+  if(hasCompost() && compostMult > 1) bonus *= (1 + 0.1 * (compostMult - 1));
+  return bonus;
+}
 
 async function callGNNAnalyze() {
   if (!apiOnline) return null;
@@ -971,7 +1041,8 @@ async function callGNNAnalyze() {
       }),
       coins: coins,
       season: seasonIdx,
-      gps_event_bonus: gpsEventBonus,
+      gps_event_bonus: (activeEvent ? 1 : gpsEventBonus) * getUpgradeGpsBonus(),
+      event_id: activeEvent ? activeEvent.id : null,
     };
     var r = await fetch(BACKEND_URL + '/gnn/analyze/detail', {
       method: 'POST',
@@ -993,7 +1064,7 @@ async function callGNNAnalyze() {
 // Debounced trigger: call backend GNN max once per 2s after cell changes
 function triggerGNN() {
   clearTimeout(gnnDebounceTimer);
-  gnnDebounceTimer = setTimeout(callGNNAnalyze, 2000);
+  gnnDebounceTimer = setTimeout(callGNNAnalyze, sensorOn ? 1000 : 2000);
 }
 
 // ── Species Importance Analysis ───────────────────────────────────────────────
@@ -1018,7 +1089,10 @@ async function runImportance() {
         if (!c) return null;
         return { id: c.id, name: c.name, dEmoji: c.dEmoji || c.emoji, tr: c.tr, water: !!c.water };
       }),
-      coins: coins, season: seasonIdx, gps_event_bonus: gpsEventBonus,
+      coins: coins,
+      season: seasonIdx,
+      gps_event_bonus: (activeEvent ? 1 : gpsEventBonus) * getUpgradeGpsBonus(),
+      event_id: activeEvent ? activeEvent.id : null,
     };
     var r = await fetch(BACKEND_URL + '/gnn/importance', {
       method: 'POST',
@@ -1105,7 +1179,7 @@ function renderImportance(data) {
 function updateGNNPanel(data) {
   if (!data) return;
 
-  var score = data.score;
+  var score = Math.min(100, data.score + (gnnHealBonus || 0));
   var gps   = data.gps;
   lastGps = gps;
 
@@ -1778,10 +1852,10 @@ var unlockedAch = {};
 
 // ─── SEASONS ─────────────────────────────────────────────────────────────────
 var SEASONS = [
-  {name:'🌱 春季', gpsBonus:1.1, bg:'#f4f2ee', label:'春季', style:'background:rgba(26,127,110,.25);color:#a3e8dc;border-color:rgba(26,127,110,.4)'},
-  {name:'☀️ 夏季', gpsBonus:1.2, bg:'#f4f2ee', label:'夏季', style:'background:rgba(251,191,36,.2);color:#fde68a;border-color:rgba(251,191,36,.3)'},
-  {name:'🍂 秋季', gpsBonus:0.9, bg:'#f4f2ee', label:'秋季', style:'background:rgba(234,88,12,.2);color:#fdba74;border-color:rgba(234,88,12,.3)'},
-  {name:'❄️ 冬季', gpsBonus:0.7, bg:'#f4f2ee', label:'冬季', style:'background:rgba(37,99,235,.2);color:#93c5fd;border-color:rgba(37,99,235,.3)'},
+  {name:'🌱 春季', gpsBonus:1.1, label:'春季', effect:'萬物復甦，整體收益 +10%。', bg:'#eff8ee', cell:'#e3f5de', cell2:'#f6fbf3', border:'#b7ddb0', accent:'#1a7f6e', soft:'#dff3e4', style:'background:rgba(26,127,110,.25);color:#a3e8dc;border-color:rgba(26,127,110,.4)'},
+  {name:'☀️ 夏季', gpsBonus:1.2, label:'夏季', effect:'陽光充足，整體收益 +20%。太陽能板會再提高收益。', bg:'#fff7df', cell:'#fff0ba', cell2:'#fffaf0', border:'#f1c86a', accent:'#d97706', soft:'#fff3c4', style:'background:rgba(251,191,36,.2);color:#fde68a;border-color:rgba(251,191,36,.3)'},
+  {name:'🍂 秋季', gpsBonus:0.9, label:'秋季', effect:'資源回落，整體收益 -10%。適合補強食物鏈。', bg:'#fff1e7', cell:'#ffe0c7', cell2:'#fff7f0', border:'#efb083', accent:'#ea580c', soft:'#ffead7', style:'background:rgba(234,88,12,.2);color:#fdba74;border-color:rgba(234,88,12,.3)'},
+  {name:'❄️ 冬季', gpsBonus:0.7, label:'冬季', effect:'低溫休眠，整體收益 -30%。雨水收集可緩和冬季低收益。', bg:'#edf5ff', cell:'#dbeafe', cell2:'#f4f9ff', border:'#9ec5fe', accent:'#2563eb', soft:'#e0efff', style:'background:rgba(37,99,235,.2);color:#93c5fd;border-color:rgba(37,99,235,.3)'},
 ];
 var seasonIdx = 0, seasonTick = 0, SEASON_DUR = 300; // 30 seconds each
 
@@ -1929,7 +2003,8 @@ function computeGNN(){
   var base = 1 + total*0.3;
   var mult = score / 50;
   var season = SEASONS[seasonIdx].gpsBonus;
-  var gps = Math.max(0.1, parseFloat((base * mult * (bee?1.2:1) * (compost?1.1:1) * season * gpsEventBonus).toFixed(1)));
+  var compostBonus = compost ? (1 + 0.1 * compostMult) : 1;
+  var gps = Math.max(0.1, parseFloat((base * mult * (bee?1.2:1) * compostBonus * season * gpsEventBonus).toFixed(1)));
 
   return {
     score, gps, pos, iss,
@@ -1995,7 +2070,7 @@ function drawGraph(){
   var W=canvas.width,H=canvas.height;
   ctx.clearRect(0,0,W,H);
   // background
-  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#f4f2ee'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--season-bg').trim()||'#f4f2ee'; ctx.fillRect(0,0,W,H);
   if(graphNodes.length===0){
     ctx.fillStyle='#25a08c'; ctx.font='bold 13px DM Sans,sans-serif';
     ctx.textAlign='center'; ctx.fillText('放置生物後顯示生態關係圖',W/2,H/2);
@@ -2246,6 +2321,38 @@ document.getElementById('pmOk').onclick=function(){
   toast(selShop.patterns[pi]+' '+name+' 加入你的草地！');
 };
 
+var _origRenderEncycContent = renderEncycContent;
+renderEncycContent = function(){
+  if(encycTab !== 'events') return _origRenderEncycContent();
+  var totalWeight = EVENTS.reduce(function(sum, ev){ return sum + (ev.weight || 1); }, 0);
+  var typeLabel = {good:'正面事件', bad:'負面事件', info:'特殊事件'};
+  var typeStyle = {
+    good:'background:#d1fae5;color:#065f46;border-color:#a7f3d0',
+    bad:'background:#fee2e2;color:#991b1b;border-color:#fecaca',
+    info:'background:#dbeafe;color:#1e40af;border-color:#bfdbfe'
+  };
+  var eventHtml = '<div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:10px">'
+    + '隨機事件約每 15 秒檢查一次，約 55% 機率觸發。事件會送到後端，影響生態分數與每秒金幣收益。'
+    + '</div>';
+  EVENTS.forEach(function(ev){
+    var evIcon = (ev.msg || '').split(' ')[0] || '🎲';
+    var chance = totalWeight ? Math.round(((ev.weight || 1) / totalWeight) * 100) : 0;
+    eventHtml += '<div style="display:flex;gap:9px;padding:9px;border-radius:10px;border:1.5px solid var(--border);margin-bottom:6px;background:var(--surface)">'
+      + '<div style="font-size:24px;width:32px;text-align:center;flex-shrink:0">'+evIcon+'</div>'
+      + '<div style="flex:1">'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap">'
+      + '<span style="font-size:12px;font-weight:900;color:var(--text)">'+(ev.name || '隨機事件')+'</span>'
+      + '<span style="font-size:9px;font-weight:800;padding:1px 6px;border-radius:5px;border:1px solid;'+(typeStyle[ev.type] || typeStyle.info)+'">'+(typeLabel[ev.type] || '特殊事件')+'</span>'
+      + '<span style="font-size:9px;color:var(--text3);margin-left:auto">'+ev.duration+' 秒</span>'
+      + '</div>'
+      + '<div style="font-size:10px;color:var(--text);line-height:1.5;font-weight:800">'+(ev.effectText || ev.msg)+'</div>'
+      + '<div style="font-size:9px;color:var(--text3);line-height:1.5;margin-top:2px">觸發權重 '+(ev.weight || 1)+'，約佔 '+chance+'%</div>'
+      + '</div>'
+      + '</div>';
+  });
+  document.getElementById('encycContent').innerHTML = eventHtml;
+};
+
 function openRm(idx){
   var c=cells[idx];if(!c)return;
   rmIdx=idx;
@@ -2297,14 +2404,36 @@ function spawnCoinPop(){
 // ─── SEASON & EVENTS ──────────────────────────────────────────────────────────
 function updateSeason(){
   var s=SEASONS[seasonIdx];
+  var r=document.documentElement.style;
+  r.setProperty('--season-bg',s.bg);
+  r.setProperty('--season-cell',s.cell);
+  r.setProperty('--season-cell2',s.cell2);
+  r.setProperty('--season-border',s.border);
+  r.setProperty('--season-accent',s.accent);
+  r.setProperty('--season-soft',s.soft);
   var sb=document.getElementById('seasonBadge');
   sb.textContent=s.name;
   sb.style.cssText=s.style;
+  var pn=document.getElementById('seasonPanelName');
+  if(pn) pn.textContent=s.name;
+  var ef=document.getElementById('seasonEffect');
+  if(ef) ef.textContent=s.effect;
+  var mt=document.getElementById('seasonMultiplier');
+  if(mt) mt.textContent='x'+s.gpsBonus.toFixed(2);
+  updateSeasonProgress();
+  drawGraph();
+}
+
+function updateSeasonProgress(){
+  var fill=document.getElementById('seasonProgress');
+  if(!fill) return;
+  var pct=Math.min(100,Math.max(0,(seasonTick/(SEASON_DUR*10))*100));
+  fill.style.width=pct+'%';
 }
 
 function triggerRandomEvent(){
   if(activeEvent)return;
-  if(Math.random()>0.3)return; // 30% chance
+  if(Math.random()>0.55)return; // 55% chance
   var ev=EVENTS[Math.floor(Math.random()*EVENTS.length)];
   activeEvent=ev; eventTimer=ev.duration*10;
   ev.effect();
@@ -2329,11 +2458,14 @@ setInterval(function(){
   if(popAccum>=lastGps*3){popAccum=0;spawnCoinPop();}
   // season tick
   seasonTick++;
+  updateSeasonProgress();
   if(seasonTick>=SEASON_DUR*10){
     seasonTick=0;
     seasonIdx=(seasonIdx+1)%4;
     updateSeason();
     updateHUD();
+    triggerGNN();
+    addLog(SEASONS[seasonIdx].name+' 到來：'+SEASONS[seasonIdx].effect,'info');
     toast(SEASONS[seasonIdx].name+' 到來！收益乘數 x'+SEASONS[seasonIdx].gpsBonus);
   }
   // event tick
@@ -2346,8 +2478,8 @@ setInterval(function(){
       updateHUD();
     }
   }
-  // random event every ~60s
-  if(tick%600===0) triggerRandomEvent();
+  // random event every ~15s
+  if(tick%150===0) triggerRandomEvent();
   // redraw graph every 5s
   if(tick%50===0) drawGraph();
 },100);
@@ -2358,8 +2490,8 @@ var UPGRADES = [
   {id:'expand2', name:'草地擴充 II', emoji:'🌿', desc:'再增加 7 格（49格）',cost:1200, bought:false, requires:'expand1', effect:function(){expandGrid(7);}},
   {id:'rainwater',name:'雨水收集',   emoji:'🌧️', desc:'乾旱季收益 +20%',   cost:400,  bought:false, effect:function(){droughtBonus=1.2;}},
   {id:'solar',   name:'太陽能板',    emoji:'☀️',  desc:'夏季收益額外 +15%',cost:600,  bought:false, effect:function(){summerBonus=1.15;}},
-  {id:'composter',name:'大型堆肥機', emoji:'♻️',  desc:'堆肥效果 x2',      cost:800,  bought:false, effect:function(){compostMult=2;}},
-  {id:'sensor',  name:'生態感測器',  emoji:'📡',  desc:'GNN更新頻率加倍',  cost:350,  bought:false, effect:function(){sensorOn=true;}},
+  {id:'composter',name:'大型堆肥機', emoji:'♻️',  desc:'有堆肥時收益加成翻倍', cost:800,  bought:false, effect:function(){compostMult=2; updateAll(); triggerGNN();}},
+  {id:'sensor',  name:'生態感測器',  emoji:'📡',  desc:'生態報告更新更快',     cost:350,  bought:false, effect:function(){sensorOn=true; triggerGNN();}},
 ];
 var droughtBonus=1, summerBonus=1, compostMult=1, sensorOn=false;
 var gridSize=35;
@@ -2456,6 +2588,34 @@ function renderEncycTabs(){
 }
 function switchEncycTab(k){encycTab=k;renderEncycTabs();renderEncycContent();}
 function renderEncycContent(){
+  if(encycTab==='events'){
+    var typeLabel={good:'增益事件',bad:'危機事件',info:'特殊事件'};
+    var typeStyle={
+      good:'background:#d1fae5;color:#065f46;border-color:#a7f3d0',
+      bad:'background:#fee2e2;color:#991b1b;border-color:#fecaca',
+      info:'background:#dbeafe;color:#1e40af;border-color:#bfdbfe'
+    };
+    var eventHtml='<div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:10px">'
+      +'事件會在遊戲進行中隨機發生。一次只會有一個事件生效，效果結束後才會抽下一個。'
+      +'</div>';
+    EVENTS.forEach(function(ev){
+      var evIcon=ev.msg.split(' ')[0]||'🎲';
+      var evTitle=ev.name||ev.msg.replace(evIcon,'').split('！')[0].trim()||'隨機事件';
+      eventHtml+='<div style="display:flex;gap:9px;padding:9px;border-radius:10px;border:1.5px solid var(--border);margin-bottom:6px;background:var(--surface)">'
+        +'<div style="font-size:24px;width:32px;text-align:center;flex-shrink:0">'+evIcon+'</div>'
+        +'<div style="flex:1">'
+        +  '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">'
+        +    '<span style="font-size:12px;font-weight:900;color:var(--text)">'+evTitle+'</span>'
+        +    '<span style="font-size:9px;font-weight:800;padding:1px 6px;border-radius:5px;border:1px solid;'+(typeStyle[ev.type]||typeStyle.info)+'">'+(typeLabel[ev.type]||'特殊事件')+'</span>'
+        +    '<span style="font-size:9px;color:var(--text3);margin-left:auto">'+ev.duration+' 秒</span>'
+        +  '</div>'
+        +  '<div style="font-size:10px;color:var(--text2);line-height:1.5">'+ev.msg+'</div>'
+        +'</div>'
+        +'</div>';
+    });
+    document.getElementById('encycContent').innerHTML=eventHtml;
+    return;
+  }
   var items=CAT[encycTab]||[];
   var FOOD_CHAIN_DESC={
     '-1':'設施類 — 不參與食物鏈，但提供生態加成',
@@ -2546,7 +2706,7 @@ function resetGame(){
   gridSize=35; seasonIdx=0; seasonTick=0; unlockedAch={};
   UPGRADES.forEach(function(u){u.bought=false;});
   droughtBonus=1; summerBonus=1; compostMult=1; sensorOn=false;
-  gpsEventBonus=1; ecoBonus=0;
+  gpsEventBonus=1; ecoBonus=0; gnnHealBonus=0;
   selShop=null; activeEvent=null;
   updateAll(); updateSeason(); renderUpgrades(); updateSelBar();
   toast('🔄 遊戲已重置！');
@@ -2562,6 +2722,35 @@ EVENTS.push(
   {type:'bad',  msg:'🐀 老鼠入侵！消耗部分植物能量', duration:15, effect:function(){gpsEventBonus=0.8;}, end:function(){gpsEventBonus=1;}},
   {type:'good', msg:'🌊 水位上升！水生生物活躍，池塘加成', duration:30, effect:function(){ecoBonus=8;}, end:function(){ecoBonus=0;}}
 );
+EVENTS = [
+  {id:'spring_rain', type:'good', weight:12, name:'春雨降臨', effectText:'生態分數 +3，每秒金幣收益 x1.20', msg:'🌧️ 春雨降臨：植物吸收良好，收益提升 30 秒', duration:30, effect:function(){gpsEventBonus=1.20; ecoBonus+=3; triggerGNN();}, end:function(){gpsEventBonus=1; ecoBonus=Math.max(0,ecoBonus-3); triggerGNN();}},
+  {id:'locust_swarm', type:'bad', weight:8, name:'蝗蟲入侵', effectText:'每秒金幣收益 x0.70', msg:'🦗 蝗蟲入侵：植物被啃食，收益下降 20 秒', duration:20, effect:function(){gpsEventBonus=0.70; triggerGNN();}, end:function(){gpsEventBonus=1; triggerGNN();}},
+  {id:'forest_fire', type:'bad', weight:4, name:'小型野火', effectText:'每秒金幣收益 x0.60，生態分數 -5', msg:'🔥 小型野火：棲地受損，收益與健康度下降 18 秒', duration:18, effect:function(){gpsEventBonus=0.60; ecoBonus-=5; triggerGNN();}, end:function(){gpsEventBonus=1; ecoBonus+=5; triggerGNN();}},
+  {id:'pollinator_boom', type:'good', weight:10, name:'授粉高峰', effectText:'生態分數 +10', msg:'🐝 授粉高峰：蜂蝶活動旺盛，生態分數提升 25 秒', duration:25, effect:function(){ecoBonus+=10; triggerGNN();}, end:function(){ecoBonus=Math.max(0,ecoBonus-10); triggerGNN();}},
+  {id:'drought', type:'bad', weight:7, name:'短暫乾旱', effectText:'每秒金幣收益 x0.65', msg:'☀️ 短暫乾旱：水分不足，收益下降 20 秒', duration:20, effect:function(){gpsEventBonus=0.65; triggerGNN();}, end:function(){gpsEventBonus=1; triggerGNN();}},
+  {id:'full_moon', type:'good', weight:8, name:'滿月活躍', effectText:'每秒金幣收益 x1.35', msg:'🌕 滿月活躍：夜行生物活躍，收益提升 25 秒', duration:25, effect:function(){gpsEventBonus=1.35; triggerGNN();}, end:function(){gpsEventBonus=1; triggerGNN();}},
+  {id:'education_visit', type:'info', weight:8, name:'環境教育參訪', effectText:'每秒金幣收益 x1.10', msg:'🧑‍🏫 環境教育參訪：遊客支持生態保育，收益小幅提升 20 秒', duration:20, effect:function(){gpsEventBonus=1.10; triggerGNN();}, end:function(){gpsEventBonus=1; triggerGNN();}},
+  {id:'invasive_species', type:'bad', weight:5, name:'外來種入侵', effectText:'生態分數 -8', msg:'⚠️ 外來種入侵：食物網受到干擾，生態分數下降 20 秒', duration:20, effect:function(){ecoBonus-=8; triggerGNN();}, end:function(){ecoBonus+=8; triggerGNN();}},
+  {id:'decomposer_bloom', type:'good', weight:10, name:'分解者活躍', effectText:'每秒金幣收益 x1.25', msg:'♻️ 分解者活躍：土壤循環變好，收益提升 30 秒', duration:30, effect:function(){gpsEventBonus=1.25; triggerGNN();}, end:function(){gpsEventBonus=1; triggerGNN();}},
+  {id:'water_cleanup', type:'good', weight:7, name:'水域淨化', effectText:'生態分數 +6，每秒金幣收益 x1.15', msg:'💧 水域淨化：水生棲地恢復，整體狀態提升 25 秒', duration:25, effect:function(){gpsEventBonus=1.15; ecoBonus+=6; triggerGNN();}, end:function(){gpsEventBonus=1; ecoBonus=Math.max(0,ecoBonus-6); triggerGNN();}},
+  {id:'cold_wave', type:'bad', weight:7, name:'寒流來襲', effectText:'每秒金幣收益 x0.75', msg:'❄️ 寒流來襲：生物活動變慢，收益下降 20 秒', duration:20, effect:function(){gpsEventBonus=0.75; triggerGNN();}, end:function(){gpsEventBonus=1; triggerGNN();}},
+  {id:'disease_outbreak', type:'bad', weight:5, name:'疾病爆發', effectText:'生態分數 -10', msg:'🦠 疾病爆發：族群健康受影響，生態分數下降 18 秒', duration:18, effect:function(){ecoBonus-=10; triggerGNN();}, end:function(){ecoBonus+=10; triggerGNN();}},
+  {id:'habitat_restoration', type:'good', weight:6, name:'棲地復育', effectText:'生態分數 +12', msg:'🌱 棲地復育：生態連結改善，健康度提升 25 秒', duration:25, effect:function(){ecoBonus+=12; triggerGNN();}, end:function(){ecoBonus=Math.max(0,ecoBonus-12); triggerGNN();}},
+  {id:'seed_dispersal', type:'good', weight:9, name:'種子傳播', effectText:'每秒金幣收益 x1.18', msg:'🍃 種子傳播：植物擴散順利，收益提升 25 秒', duration:25, effect:function(){gpsEventBonus=1.18; triggerGNN();}, end:function(){gpsEventBonus=1; triggerGNN();}},
+  {id:'research_grant', type:'info', weight:7, name:'研究補助', effectText:'立即獲得 120 金幣', msg:'🔬 研究補助：你的生態資料受到重視，獲得額外金幣', duration:15, effect:function(){coins+=120; updateHUD(); triggerGNN();}, end:function(){}}
+];
+
+function pickWeightedEvent(pool){
+  var total = pool.reduce(function(sum, ev){ return sum + (ev.weight || 1); }, 0);
+  var roll = Math.random() * total;
+  for(var i=0;i<pool.length;i++){
+    roll -= (pool[i].weight || 1);
+    if(roll <= 0) return pool[i];
+  }
+  return pool[pool.length-1];
+}
+
+TABS.push({k:'events',l:'🎲 隨機事件'});
 
 // ─── PATCH computeGNN to include upgrade bonuses ──────────────────────────────
 var _origCompute=computeGNN;
@@ -2645,11 +2834,11 @@ function getLvLabel(cellIdx){
 
 // ─── MARKET SYSTEM ────────────────────────────────────────────────────────────
 var MARKET_ITEMS=[
-  {id:'sp_rain',   name:'人工降雨',    emoji:'🌧️', cost:300, desc:'立即植物 GPS×2，持續 60 秒', type:'consumable'},
-  {id:'sp_fertilize',name:'特效肥料', emoji:'🧪',  cost:150, desc:'所有植物本回合 GPS+50%',      type:'consumable'},
-  {id:'sp_repel',  name:'驅蟲噴霧',   emoji:'🪲',  cost:200, desc:'下次壞事件跳過',              type:'consumable'},
-  {id:'sp_clone',  name:'物種複製',    emoji:'🧬',  cost:500, desc:'複製一格中的生物到相鄰空格',  type:'consumable'},
-  {id:'sp_heal',   name:'生態療癒',    emoji:'💚',  cost:250, desc:'GNN 健康度立即 +15',          type:'consumable'},
+  {id:'sp_rain',   name:'人工降雨',    emoji:'🌧️', cost:300, desc:'整體收益 ×2，持續 60 秒',      type:'consumable'},
+  {id:'sp_fertilize',name:'特效肥料', emoji:'🧪',  cost:150, desc:'整體收益 +50%，持續 30 秒',     type:'consumable'},
+  {id:'sp_repel',  name:'驅蟲噴霧',   emoji:'🪲',  cost:200, desc:'下次事件不會是壞事件',          type:'consumable'},
+  {id:'sp_clone',  name:'物種複製',    emoji:'🧬',  cost:500, desc:'複製一格生物到隨機空格',        type:'consumable'},
+  {id:'sp_heal',   name:'生態療癒',    emoji:'💚',  cost:250, desc:'健康度暫時 +15，持續 20 秒',   type:'consumable'},
   {id:'sp_magnet', name:'生物磁鐵',    emoji:'🧲',  cost:400, desc:'下次放置不扣金幣',            type:'consumable'},
 ];
 var marketInventory={};  // id -> count
@@ -2703,10 +2892,10 @@ function useMarketItem(id){
   var cnt=marketInventory[id]||0;
   if(cnt<=0){toast('庫存不足！');return;}
   marketInventory[id]=cnt-1;
-  if(id==='sp_rain'){gpsEventBonus=2;spRainTimer=600;toast('🌧️ 人工降雨！植物 GPS×2，60秒');}
-  else if(id==='sp_fertilize'){gpsEventBonus=1.5;setTimeout(function(){gpsEventBonus=1;},30000);toast('🧪 特效肥料！GPS+50% 30秒');}
-  else if(id==='sp_repel'){skipNextBadEvent=true;toast('🪲 驅蟲噴霧！下次壞事件跳過');}
-  else if(id==='sp_heal'){ecoBonus+=15;setTimeout(function(){ecoBonus=Math.max(0,ecoBonus-15);},20000);updateHUD();toast('💚 生態療癒！健康度 +15');}
+  if(id==='sp_rain'){gpsEventBonus=2;spRainTimer=600;updateAll();triggerGNN();toast('🌧️ 人工降雨！整體收益 ×2，60秒');}
+  else if(id==='sp_fertilize'){gpsEventBonus=1.5;updateAll();triggerGNN();setTimeout(function(){gpsEventBonus=1;updateAll();triggerGNN();},30000);toast('🧪 特效肥料！整體收益 +50%，30秒');}
+  else if(id==='sp_repel'){skipNextBadEvent=true;toast('🪲 驅蟲噴霧！下次事件避開壞事件');}
+  else if(id==='sp_heal'){ecoBonus+=15;gnnHealBonus+=15;updateHUD();triggerGNN();setTimeout(function(){ecoBonus=Math.max(0,ecoBonus-15);gnnHealBonus=Math.max(0,gnnHealBonus-15);updateHUD();triggerGNN();},20000);toast('💚 生態療癒！健康度暫時 +15');}
   else if(id==='sp_magnet'){freeNextPlace=true;toast('🧲 生物磁鐵！下次放置免費');}
   else if(id==='sp_clone'){
     // find first occupied cell and clone to random empty
@@ -2762,14 +2951,14 @@ toast=function(msg){
 var _origTrigger=triggerRandomEvent;
 triggerRandomEvent=function(){
   if(activeEvent) return;
-  if(Math.random()>0.3) return;
+  if(Math.random()>0.55) return;
   var pool=EVENTS.slice();
   if(skipNextBadEvent){
     pool=pool.filter(function(e){return e.type!=='bad';});
     skipNextBadEvent=false;
     addLog('🪲 驅蟲噴霧生效，跳過壞事件！','good');
   }
-  var ev=pool[Math.floor(Math.random()*pool.length)];
+  var ev=pickWeightedEvent(pool);
   activeEvent=ev; eventTimer=ev.duration*10;
   ev.effect();
   var bar=document.getElementById('eventBar');
@@ -2860,7 +3049,7 @@ setInterval(function(){
   // rain timer
   if(spRainTimer>0){
     spRainTimer--;
-    if(spRainTimer===0){gpsEventBonus=1;addLog('🌧️ 人工降雨效果結束','info');}
+    if(spRainTimer===0){gpsEventBonus=1;updateAll();triggerGNN();addLog('🌧️ 人工降雨效果結束','info');}
   }
 },1000);
 
