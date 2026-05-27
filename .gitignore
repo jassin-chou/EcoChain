@@ -1,21 +1,28 @@
-# ── 絕對不能進 Git ─────────────────────────────────────
-# Firebase Service Account 金鑰（含 RSA 私鑰）
+﻿# ── Secrets / local-only credentials ─────────────────────
+.env
+.env.*
+!.env.example
 serviceAccountKey.json
+serviceAccountKey*.json
+serviceAccountKey.zip
+serviceAccountKey*.zip
 *serviceAccount*.json
 *serviceAccount*.zip
 firebase-adminsdk*.json
+google-credentials*.json
+gcp-credentials*.json
 
+# ── Local archives ───────────────────────────────────────
+*.zip
 
-# 本地環境變數
-.env
-
-# ── Python ─────────────────────────────────────────────
+# ── Python ───────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
 .Python
 venv/
+venv311/
 .venv/
 env/
 *.egg-info/
@@ -23,12 +30,10 @@ dist/
 build/
 .eggs/
 
-# ── 模型權重（大檔，由 CI 產生）────────────────────────
+# ── Model weights / generated artifacts ──────────────────
 models/ecochain_gnn.pt
 *.pt
 *.pth
-
-# ── 評估產出物（跑完才生成，不進 repo）────────────────
 loss_curve.png
 score_scatter.png
 comparison_table.png
@@ -37,11 +42,9 @@ holdout_results.png
 eval_report.txt
 holdout_report.txt
 
-# ── 編輯器 / OS ─────────────────────────────────────────
+# ── Editor / OS ──────────────────────────────────────────
 .DS_Store
 .idea/
 .vscode/
 *.swp
 Thumbs.db
-venv/
-venv311/
