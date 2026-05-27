@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
@@ -1830,8 +1830,7 @@ var ROLES={'-1':'設施','0':'生產者','0.5':'授粉者','1':'草食動物','1
 // ─── ACHIEVEMENTS ─────────────────────────────────────────────────────────────
 var ACHIEVEMENTS = [
   {id:'first',    emoji:'🌱', name:'生態起步', desc:'放置第一個物種',    check:function(s){return s.total>=1;}},
-  {id:'pond',     emoji:'💧', name:'水域開拓', desc:'建立池塘並放入水生生物', check:function(s){return s.hasPond&&s.aquatics>=1;}},
-  {id:'chain',    emoji:'🔗', name:'完整食物鏈',desc:'同時有植物、草食、肉食', check:function(s){return s.plants>=1&&s.herbs>=1&&s.preds>=1;}},
+  {id:'pond', emoji:'💧', name:'水域開拓', desc:'建立池塘並放入水生生物', check:function(s){return s.pond && s.aquatics >= 1;}},  {id:'chain',    emoji:'🔗', name:'完整食物鏈',desc:'同時有植物、草食、肉食', check:function(s){return s.plants>=1&&s.herbs>=1&&s.preds>=1;}},
   {id:'balance',  emoji:'⚖️', name:'生態平衡',  desc:'GNN健康度達到60', check:function(s){return s.score>=60;}},
   {id:'thriving', emoji:'🌟', name:'生態繁榮',  desc:'GNN健康度達到85', check:function(s){return s.score>=85;}},
   {id:'bee',      emoji:'🐝', name:'授粉大使',  desc:'擁有蜜蜂和5種以上植物', check:function(s){return s.hasBee&&s.plants>=5;}},
