@@ -246,6 +246,7 @@ body{
   pointer-events:none;animation:floatup .9s ease forwards;z-index:50;white-space:nowrap;
 }
 @keyframes floatup{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-28px)}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* ══════════════════════════════════════════
    CENTER — Graph + Eco info
@@ -1733,14 +1734,27 @@ async function cloudLoad() {
 }
 
 // ── Leaderboard modal ─────────────────────────────────────────────────────────
-async function openLeaderboard() {
-  var modal = document.getElementById('leaderboardModal');
+// Check if user has any logged-in slot (has a stored token)
+function _hasActiveToken() {
+  try {
+    var tokens = JSON.parse(localStorage.getItem('ecochain_tokens') || '{}');
+    return Object.keys(tokens).length > 0;
+  } catch(e) { return false; }
+}
+
+async function _fetchAndRenderLeaderboard() {
   var content = document.getElementById('leaderboardContent');
-  if (!modal) return;
+  var updatedEl = document.getElementById('leaderboardUpdatedAt');
+  var refreshBtn = document.getElementById('leaderboardRefreshBtn');
+  if (!content) return;
+
+  // Spin the refresh button while loading
+  if (refreshBtn) { refreshBtn.style.animation = 'spin 0.7s linear infinite'; refreshBtn.disabled = true; }
   content.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text2)">載入中...</div>';
-  modal.style.display = 'flex';
+
   if (!apiOnline) {
     content.innerHTML = '<div style="text-align:center;color:#991b1b">後端離線，無法載入排行榜</div>';
+    if (refreshBtn) { refreshBtn.style.animation = ''; refreshBtn.disabled = false; }
     return;
   }
   try {
@@ -1749,12 +1763,22 @@ async function openLeaderboard() {
     var html = '<table style="width:100%;border-collapse:collapse;font-size:11px">'
       + '<tr style="font-weight:900;color:var(--text2);font-size:10px">'
       + '<td style="padding:4px 6px">#</td><td>玩家</td><td>🧠 健康</td><td>🪙 金幣</td><td>🧬 物種</td></tr>';
-    // player_id is no longer returned by the API (privacy)
     (data.entries || []).forEach(function(e, i) {
       var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1)+'';
+      // Format updated_at as relative time
+      var timeStr = '';
+      if (e.updated_at) {
+        try {
+          var diffMin = Math.floor((Date.now() - new Date(e.updated_at)) / 60000);
+          if (diffMin < 1) timeStr = ' · 剛剛';
+          else if (diffMin < 60) timeStr = ' · ' + diffMin + '分鐘前';
+          else if (diffMin < 1440) timeStr = ' · ' + Math.floor(diffMin/60) + '小時前';
+          else timeStr = ' · ' + Math.floor(diffMin/1440) + '天前';
+        } catch(_) {}
+      }
       html += '<tr style="border-top:1px solid var(--border)">'
         + '<td style="padding:5px 6px;font-weight:800">'+medal+'</td>'
-        + '<td style="font-weight:700">'+e.player_name+'</td>'
+        + '<td style="font-weight:700">'+e.player_name+'<span style="font-size:9px;color:var(--text2);font-weight:400">'+timeStr+'</span></td>'
         + '<td style="color:var(--accent);font-weight:800">'+e.eco_score+'</td>'
         + '<td>'+Math.floor(e.coins)+'</td>'
         + '<td>'+e.species_count+'</td>'
@@ -1762,9 +1786,37 @@ async function openLeaderboard() {
     });
     html += '</table>';
     content.innerHTML = html || '<div style="color:var(--text2)">暫無排行資料</div>';
+    if (updatedEl) updatedEl.textContent = '更新於 ' + new Date().toLocaleTimeString('zh-TW', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
   } catch(e) {
     content.innerHTML = '<div style="color:#991b1b">載入失敗：'+e.message+'</div>';
+  } finally {
+    if (refreshBtn) { refreshBtn.style.animation = ''; refreshBtn.disabled = false; }
   }
+}
+
+async function refreshLeaderboard() {
+  await _fetchAndRenderLeaderboard();
+}
+
+async function openLeaderboard() {
+  var modal = document.getElementById('leaderboardModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  // Show login hint for users without any account token
+  var hintEl = document.getElementById('leaderboardLoginHint');
+  if (hintEl) {
+    if (!_hasActiveToken()) {
+      hintEl.innerHTML = '<div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--text2);margin-bottom:10px">'
+        + '🔒 建立帳號並存檔，才能進入排行榜'
+        + '<button onclick="openSaveModal()" style="margin-left:8px;padding:2px 10px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:11px;cursor:pointer">創立帳號</button>'
+        + '</div>';
+    } else {
+      hintEl.innerHTML = '';
+    }
+  }
+
+  await _fetchAndRenderLeaderboard();
 }
 
 // ─── CATALOG ─────────────────────────────────────────────────────────────────
@@ -3088,13 +3140,18 @@ document.body.insertAdjacentHTML('beforeend',
   +'<div class="modal" style="max-width:420px;max-height:85vh;overflow-y:auto">'
   +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
   +'<div class="modal-title" style="margin:0">🏆 全球排行榜</div>'
+  +'<div style="display:flex;align-items:center;gap:8px">'
+  +'<button id="leaderboardRefreshBtn" onclick="refreshLeaderboard()" title="手動刷新排行榜" style="font-size:15px;background:none;border:1.5px solid var(--border);border-radius:7px;cursor:pointer;color:var(--text2);padding:2px 8px;line-height:1.6">🔄</button>'
   +'<button onclick="document.getElementById(\'leaderboardModal\').style.display=\'none\'" style="font-size:18px;background:none;border:none;cursor:pointer;color:var(--text2)">✕</button>'
   +'</div>'
-  +'<div style="font-size:10px;color:var(--text2);margin-bottom:10px">玩家ID：<code style="background:var(--surface2);padding:2px 6px;border-radius:4px">'+PLAYER_ID+'</code></div>'
+  +'</div>'
+  +'<div id="leaderboardLoginHint" style="margin-bottom:8px"></div>'
   +'<div id="leaderboardContent"></div>'
+  +'<div id="leaderboardUpdatedAt" style="font-size:10px;color:var(--text2);text-align:right;margin-top:8px"></div>'
   +'</div>'
   +'</div>'
 );
+
 
 // (gnnBadge already in new card-title HTML)
 

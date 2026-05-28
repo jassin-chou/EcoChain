@@ -712,10 +712,11 @@ def leaderboard(limit: int = Query(default=20, ge=1, le=50)):
     # 移除 player_id，只保留公開資訊
     safe_rows = [
         {
-            "player_name": r.get("player_name", "匿名"),
-            "eco_score":   r.get("eco_score", 0),
-            "coins":       r.get("coins", 0),
+            "player_name":   r.get("player_name", "匿名"),
+            "eco_score":     r.get("eco_score", 0),
+            "coins":         r.get("coins", 0),
             "species_count": r.get("species_count", 0),
+            "updated_at":    r.get("updated_at", ""),   # ISO timestamp, lets frontend show "last saved X"
         }
         for r in rows
     ]
