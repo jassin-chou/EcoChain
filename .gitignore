@@ -31,9 +31,10 @@ build/
 .eggs/
 
 # ── Model weights / generated artifacts ──────────────────
-models/ecochain_gnn.pt
 *.pt
 *.pth
+!species2vec.pt
+!models/ecochain_gnn.pt
 loss_curve.png
 score_scatter.png
 comparison_table.png
