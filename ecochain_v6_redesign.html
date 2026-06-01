@@ -853,8 +853,9 @@ body{
 // Change BACKEND_URL to your Render deployment URL after deploying.
 // While developing locally: run `uvicorn main:app` and use http://localhost:8000
 // ═══════════════════════════════════════════════════════════════════════════════
-//var BACKEND_URL = 'https://YOUR-APP.onrender.com'; // ← change this after deploy
-var BACKEND_URL = 'http://localhost:8000';
+// When served by FastAPI on Azure, use the same host for API requests.
+// If opened directly as a local file, fall back to the local development backend.
+var BACKEND_URL = window.location.protocol === 'file:' ? 'http://localhost:8000' : window.location.origin;
 
 // ── Crypto helpers ────────────────────────────────────────────────────────────
 // Uses Web Crypto API (SHA-256) instead of djb2.
