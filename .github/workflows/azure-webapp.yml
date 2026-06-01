@@ -1,0 +1,25 @@
+name: Deploy to Azure Web App
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create deployment package
+        run: |
+          zip -r release.zip . \
+            -x "venv/*" "venv311/*" ".git/*" "__pycache__/*" "*.pyc" ".env" "serviceAccountKey*.json" "serviceAccountKey*.zip"
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ecochain
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: release.zip
