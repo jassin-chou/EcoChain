@@ -176,6 +176,54 @@ body{
 .ev-good{background:#d1fae5;color:#065f46;}
 .ev-bad{background:#fee2e2;color:#991b1b;}
 .ev-info{background:#dbeafe;color:#1e40af;}
+.event-bar{
+  align-items:center;
+  gap:10px;
+}
+.event-msg{flex:1;line-height:1.45;min-width:0;}
+.event-info-btn{
+  width:24px;height:24px;border-radius:7px;
+  border:1px solid rgba(0,0,0,.08);
+  background:rgba(255,255,255,.42);
+  color:inherit;
+  font-size:13px;font-weight:800;
+  cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  opacity:.82;
+  transition:all .12s;
+}
+.event-info-btn:hover{
+  background:rgba(255,255,255,.72);
+  opacity:1;
+  transform:translateY(-1px);
+}
+.event-guide-modal{max-width:520px;max-height:85vh;overflow-y:auto;}
+.event-guide-intro{
+  font-size:10.5px;color:var(--text2);
+  line-height:1.65;
+  padding:9px 11px;
+  border-radius:var(--radius-sm);
+  background:var(--surface2);
+  border:1px solid var(--border);
+  margin-bottom:10px;
+}
+.event-guide-card{
+  display:grid;
+  grid-template-columns:28px 1fr;
+  gap:8px;
+  padding:8px 0;
+  border-bottom:1px solid var(--border);
+}
+.event-guide-card:last-child{border-bottom:none;}
+.event-guide-icon{font-size:20px;width:28px;text-align:center;line-height:1.3;}
+.event-guide-main{flex:1;min-width:0;}
+.event-guide-head{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;}
+.event-guide-name{font-size:12px;font-weight:800;color:var(--text);}
+.event-guide-pill{font-size:9px;font-weight:800;padding:1px 6px;border-radius:6px;border:1px solid;}
+.event-guide-meta{font-size:9px;color:var(--text3);margin-left:auto;white-space:nowrap;}
+.event-guide-effect{font-size:10.5px;color:var(--text);line-height:1.55;font-weight:700;}
+.event-guide-msg{font-size:9.5px;color:var(--text2);line-height:1.5;margin-top:3px;}
 
 /* ══════════════════════════════════════════
    LEFT SIDEBAR — Land Grid
@@ -822,6 +870,16 @@ body{
   </div>
 </div>
 
+<!-- EVENT GUIDE MODAL -->
+<div class="overlay" id="eventGuideModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal event-guide-modal">
+    <div class="modal-head">
+      <div class="modal-title" style="margin:0">🎲 隨機事件說明</div>
+      <button class="modal-close" onclick="document.getElementById('eventGuideModal').style.display='none'">×</button>
+    </div>
+    <div id="eventGuideContent"></div>
+  </div>
+</div>
 <!-- INFO MODAL -->
 <div class="overlay" id="infoModal" style="display:none">
   <div class="modal" style="max-width:340px">
@@ -2448,10 +2506,7 @@ function triggerRandomEvent(){
   var ev=EVENTS[Math.floor(Math.random()*EVENTS.length)];
   activeEvent=ev; eventTimer=ev.duration*10;
   ev.effect();
-  var bar=document.getElementById('eventBar');
-  bar.className='event-bar ev-'+ev.type;
-  bar.textContent=ev.msg;
-  bar.style.display='flex';
+  renderActiveEventBar(ev);
   updateHUD();
 }
 
@@ -2598,6 +2653,47 @@ function renderEncycTabs(){
   document.getElementById('encycTabs').innerHTML=html;
 }
 function switchEncycTab(k){encycTab=k;renderEncycTabs();renderEncycContent();}
+function renderEventGuideHtml(){
+  var totalWeight=EVENTS.reduce(function(sum,e){return sum+(e.weight||1);},0);
+  var html='<div class="event-guide-intro">事件發生時會暫時改變生態分數或收益。一次只會有一個事件生效，效果結束後才會抽下一個。</div>';
+  EVENTS.forEach(function(ev){
+    var chance=(ev.weight||1)/totalWeight;
+    var chanceLabel=chance>=0.10?'常見':(chance>=0.06?'普通':'稀有');
+    var typeLabel=ev.type==='good'?'正面':(ev.type==='bad'?'負面':'特殊');
+    var typeStyle=ev.type==='good'
+      ? 'background:#d1fae5;color:#065f46;border-color:#a7f3d0'
+      : (ev.type==='bad'
+        ? 'background:#fee2e2;color:#991b1b;border-color:#fecaca'
+        : 'background:#dbeafe;color:#1e40af;border-color:#bfdbfe');
+    var icon=(ev.msg||'🎲').split(' ')[0]||'🎲';
+    html+='<div class="event-guide-card">'
+      +'<div class="event-guide-icon">'+icon+'</div>'
+      +'<div class="event-guide-main">'
+      +'<div class="event-guide-head">'
+      +'<span class="event-guide-name">'+ev.name+'</span>'
+      +'<span class="event-guide-pill" style="'+typeStyle+'">'+typeLabel+'</span>'
+      +'<span class="event-guide-meta">'+chanceLabel+' · '+ev.duration+' 秒</span>'
+      +'</div>'
+      +'<div class="event-guide-effect">'+ev.effectText+'</div>'
+      +'<div class="event-guide-msg">'+ev.msg+'</div>'
+      +'</div></div>';
+  });
+  return html;
+}
+
+function openEventGuide(){
+  var out=document.getElementById('eventGuideContent');
+  if(out) out.innerHTML=renderEventGuideHtml();
+  document.getElementById('eventGuideModal').style.display='flex';
+}
+
+function renderActiveEventBar(ev){
+  var bar=document.getElementById('eventBar');
+  if(!bar) return;
+  bar.className='event-bar ev-'+ev.type;
+  bar.innerHTML='<span class="event-msg">'+ev.msg+'</span><button class="event-info-btn" type="button" title="查看隨機事件說明" aria-label="查看隨機事件說明" onclick="openEventGuide();event.stopPropagation();">🎲</button>';
+  bar.style.display='flex';
+}
 function renderEncycContent(){
   if(encycTab==='events'){
     var totalWeight=EVENTS.reduce(function(sum,e){return sum+(e.weight||1);},0);
@@ -2966,10 +3062,7 @@ triggerRandomEvent=function(){
   var ev=pickWeightedEvent(pool);
   activeEvent=ev; eventTimer=ev.duration*10;
   ev.effect();
-  var bar=document.getElementById('eventBar');
-  bar.className='event-bar ev-'+ev.type;
-  bar.textContent=ev.msg;
-  bar.style.display='flex';
+  renderActiveEventBar(ev);
   addLog(ev.msg, ev.type);
   updateHUD();
 };
