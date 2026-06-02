@@ -1400,7 +1400,51 @@ function saveAllSlots(slots) {
   localStorage.setItem('ecochain_saves', JSON.stringify(slots));
 }
 
+function getSavedUpgradeState(sd) {
+  var state = {};
+  (sd && sd.upgrades || []).forEach(function(u) {
+    if (u && u.id) state[u.id] = !!u.bought;
+  });
+  return state;
+}
+
+function getLegalGridSize(sd) {
+  var state = getSavedUpgradeState(sd);
+  var savedSize = Math.max(35, Math.min(49, parseInt(sd && sd.gridSize, 10) || 35));
+  var upgradeSize = 35 + (state.expand1 ? 7 : 0) + (state.expand2 ? 7 : 0);
+  return Math.max(savedSize, upgradeSize);
+}
+
+function syncGridUpgradeFlags(size, state) {
+  state = state || {};
+  if (size >= 42) state.expand1 = true;
+  if (size >= 49) state.expand2 = true;
+  return state;
+}
+
+function normalizeSaveData(sd) {
+  if (!sd || typeof sd !== 'object' || Array.isArray(sd)) return null;
+  var size = getLegalGridSize(sd);
+  var normalized = {};
+  for (var k in sd) normalized[k] = sd[k];
+  normalized.gridSize = size;
+  normalized.cells = (sd.cells || []).slice(0, size);
+  while (normalized.cells.length < size) normalized.cells.push(null);
+  var state = syncGridUpgradeFlags(size, getSavedUpgradeState(sd));
+  normalized.upgrades = (sd.upgrades || []).map(function(u) {
+    return u && u.id ? { id: u.id, bought: !!state[u.id] } : u;
+  });
+  ['expand1','expand2'].forEach(function(id) {
+    var exists = normalized.upgrades.some(function(u){ return u && u.id === id; });
+    if (!exists && state[id]) normalized.upgrades.push({ id: id, bought: true });
+  });
+  return normalized;
+}
+
 function buildSaveData() {
+  gridSize = Math.max(35, Math.min(49, parseInt(gridSize, 10) || 35));
+  if (cells.length > gridSize) cells = cells.slice(0, gridSize);
+  while (cells.length < gridSize) cells.push(null);
   return {
     coins: coins, totalEarned: totalEarned,
     cells: cells.map(function(c) { return c ? { id: c.id, name: c.name, dEmoji: c.dEmoji || c.emoji } : null; }),
@@ -1414,15 +1458,16 @@ function buildSaveData() {
 }
 
 function restoreSaveData(sd) {
+  sd = sd || {};
   coins = sd.coins || 120;
   totalEarned = sd.totalEarned || 120;
   seasonIdx = sd.seasonIdx || 0;
   seasonTick = sd.seasonTick || 0;
   unlockedAch = sd.unlockedAch || {};
-  gridSize = sd.gridSize || 35;
+  gridSize = getLegalGridSize(sd);
   entityXP = sd.entityXP || {};
   cells = [];
-  (sd.cells || []).forEach(function(c) {
+  (sd.cells || []).slice(0, gridSize).forEach(function(c) {
     if (!c) { cells.push(null); return; }
     var item = findItem(c.id);
     if (item) {
@@ -1432,9 +1477,16 @@ function restoreSaveData(sd) {
     } else { cells.push(null); }
   });
   while (cells.length < gridSize) cells.push(null);
-  if (sd.upgrades) sd.upgrades.forEach(function(u) {
-    var found = UPGRADES.find(function(x) { return x.id === u.id; });
-    if (found && u.bought && !found.bought) { found.bought = true; found.effect(); }
+  droughtBonus=1; summerBonus=1; compostMult=1; sensorOn=false;
+  UPGRADES.forEach(function(u){ u.bought=false; });
+  var upgradeState = syncGridUpgradeFlags(gridSize, getSavedUpgradeState(sd));
+  UPGRADES.forEach(function(u) {
+    if (!upgradeState[u.id]) return;
+    u.bought = true;
+    if (u.id === 'rainwater') droughtBonus = 1.2;
+    else if (u.id === 'solar') summerBonus = 1.15;
+    else if (u.id === 'composter') compostMult = 2;
+    else if (u.id === 'sensor') sensorOn = true;
   });
   updateAll(); updateSeason(); renderUpgrades();
   triggerGNN();
@@ -1751,12 +1803,14 @@ async function doDeleteSlot(idx) {
 // ── Cloud Sync (per slot) — requires Bearer token ────────────────────────────
 async function cloudSaveSlot(slotId, charName, saveData) {
   if (!apiOnline) return;
+  saveData = normalizeSaveData(saveData);
+  if (!slotId || !saveData) return;
   try {
     var headers = await authHeaders(slotId);
     if (!headers['Authorization']) return;
     var r = await fetch(BACKEND_URL + '/save', {
       method: 'POST', headers: headers,
-      body: JSON.stringify({ player_name: charName, save_data: saveData }),
+      body: JSON.stringify({ player_name: (charName || '匿名玩家').slice(0, 30), save_data: saveData }),
       signal: AbortSignal.timeout(8000),
     });
     if (r.status === 401) { removeToken(slotId); addLog('☁️ Token 已過期，下次讀檔時重新登入', 'warn'); return; }
@@ -2563,8 +2617,9 @@ var droughtBonus=1, summerBonus=1, compostMult=1, sensorOn=false;
 var gridSize=35;
 
 function expandGrid(n){
-  gridSize+=n;
-  for(var i=0;i<n;i++) cells.push(null);
+  var oldSize = Math.max(35, Math.min(49, parseInt(gridSize, 10) || 35));
+  gridSize = Math.min(49, oldSize + n);
+  for(var i=cells.length;i<gridSize;i++) cells.push(null);
   // update grid columns CSS dynamically
   document.getElementById('landGrid').style.gridTemplateColumns='repeat(7,1fr)';
   renderLand();
