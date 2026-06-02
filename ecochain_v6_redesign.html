@@ -141,7 +141,7 @@ body{
 ══════════════════════════════════════════ */
 .wrap{
   display:grid;
-  grid-template-columns:280px 1fr 240px;
+  grid-template-columns:280px minmax(0,1fr) 240px;
   grid-template-rows:auto 1fr;
   min-height:calc(100vh - 52px);
   gap:0;
@@ -176,6 +176,54 @@ body{
 .ev-good{background:#d1fae5;color:#065f46;}
 .ev-bad{background:#fee2e2;color:#991b1b;}
 .ev-info{background:#dbeafe;color:#1e40af;}
+.event-bar{
+  align-items:center;
+  gap:10px;
+}
+.event-msg{flex:1;line-height:1.45;min-width:0;}
+.event-info-btn{
+  width:24px;height:24px;border-radius:7px;
+  border:1px solid rgba(0,0,0,.08);
+  background:rgba(255,255,255,.42);
+  color:inherit;
+  font-size:13px;font-weight:800;
+  cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  opacity:.82;
+  transition:all .12s;
+}
+.event-info-btn:hover{
+  background:rgba(255,255,255,.72);
+  opacity:1;
+  transform:translateY(-1px);
+}
+.event-guide-modal{max-width:520px;max-height:85vh;overflow-y:auto;}
+.event-guide-intro{
+  font-size:10.5px;color:var(--text2);
+  line-height:1.65;
+  padding:9px 11px;
+  border-radius:var(--radius-sm);
+  background:var(--surface2);
+  border:1px solid var(--border);
+  margin-bottom:10px;
+}
+.event-guide-card{
+  display:grid;
+  grid-template-columns:28px 1fr;
+  gap:8px;
+  padding:8px 0;
+  border-bottom:1px solid var(--border);
+}
+.event-guide-card:last-child{border-bottom:none;}
+.event-guide-icon{font-size:20px;width:28px;text-align:center;line-height:1.3;}
+.event-guide-main{flex:1;min-width:0;}
+.event-guide-head{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;}
+.event-guide-name{font-size:12px;font-weight:800;color:var(--text);}
+.event-guide-pill{font-size:9px;font-weight:800;padding:1px 6px;border-radius:6px;border:1px solid;}
+.event-guide-meta{font-size:9px;color:var(--text3);margin-left:auto;white-space:nowrap;}
+.event-guide-effect{font-size:10.5px;color:var(--text);line-height:1.55;font-weight:700;}
+.event-guide-msg{font-size:9.5px;color:var(--text2);line-height:1.5;margin-top:3px;}
 
 /* ══════════════════════════════════════════
    LEFT SIDEBAR — Land Grid
@@ -185,6 +233,7 @@ body{
   border-right:1px solid var(--border);
   display:flex;flex-direction:column;
   overflow:hidden;
+  min-width:0;
 }
 .col-head{
   display:flex;align-items:center;justify-content:space-between;
@@ -257,6 +306,7 @@ body{
   padding:12px;
   display:flex;flex-direction:column;gap:12px;
   transition:background .5s;
+  min-width:0;
 }
 
 /* ══════════════════════════════════════════
@@ -267,6 +317,7 @@ body{
   border-left:1px solid var(--border);
   overflow-y:auto;
   display:flex;flex-direction:column;
+  min-width:0;
 }
 
 /* ══════════════════════════════════════════
@@ -575,6 +626,207 @@ body{
 /* progress bars used in GNN */
 .pbar-wrap{height:5px;background:var(--border);border-radius:99px;overflow:hidden;}
 .pbar-fill{height:100%;border-radius:99px;transition:width .6s;}
+
+/* RESPONSIVE */
+@media (max-width:1180px){
+  .topbar{
+    height:auto;
+    min-height:52px;
+    padding:8px 14px;
+    flex-wrap:wrap;
+    align-content:center;
+  }
+  .eco-wrap{order:5;flex:1 1 260px;max-width:none;}
+  .top-btns{margin-left:auto;}
+  .topbar > div:last-child{margin-left:auto;}
+  .wrap{
+    grid-template-columns:minmax(260px,320px) minmax(0,1fr);
+    grid-template-rows:auto auto auto;
+    min-height:calc(100vh - 68px);
+  }
+  .stats-bar{grid-column:1/-1;overflow-x:auto;padding:0 12px;}
+  .stat-item{padding:9px 12px;flex:0 0 auto;}
+  .left-col{grid-column:1;border-right:1px solid var(--border);}
+  .center-col{grid-column:2;}
+  .right-col{
+    grid-column:1/-1;
+    border-left:none;
+    border-top:1px solid var(--border);
+    display:grid;
+    grid-template-columns:1.2fr 1fr 1fr 1fr;
+    align-items:start;
+  }
+  .right-col .divider{display:none;}
+  .shop-section,.panel-section{border-top:none;border-right:1px solid var(--border);}
+  .right-col > :last-child{border-right:none;}
+  .slist{max-height:260px;}
+}
+
+@media (max-width:820px){
+  body{overflow-x:hidden;}
+  .topbar{
+    position:sticky;
+    gap:8px;
+    padding:8px 10px;
+  }
+  .logo{font-size:15px;}
+  .coin-block{padding:4px 8px;}
+  .coin-val{font-size:15px;}
+  .season-badge{font-size:10px;padding:3px 8px;}
+  .top-btns{
+    order:6;
+    width:100%;
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:5px;
+  }
+  .tbtn{
+    width:100%;
+    padding:7px 5px;
+    font-size:10px;
+    text-align:center;
+  }
+  .topbar > div:last-child{
+    order:4;
+    align-items:flex-start!important;
+    margin-left:0!important;
+  }
+  #apiStatus{font-size:8.5px;}
+
+  .wrap{
+    display:flex;
+    flex-direction:column;
+    min-height:auto;
+  }
+  .stats-bar{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:0;
+    padding:0;
+    overflow:visible;
+  }
+  .stat-item{
+    min-width:0;
+    padding:9px 8px;
+    justify-content:center;
+    border-right:1px solid var(--border);
+    border-bottom:1px solid var(--border);
+  }
+  .stat-item[style*="margin-left:auto"]{margin-left:0!important;}
+  .stat-num{font-size:16px;}
+  .stat-lbl{font-size:9px;}
+  .event-bar{
+    margin:8px 10px!important;
+    align-self:stretch!important;
+    font-size:11px;
+  }
+
+  .left-col,.center-col,.right-col{
+    width:100%;
+    border-left:none;
+    border-right:none;
+    overflow:visible;
+  }
+  .col-head{
+    padding:12px 12px 9px;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .sel-hint{margin-left:auto;}
+  .lgrid-wrap{padding:10px;}
+  .lgrid{gap:4px;}
+  .cell{border-radius:8px;}
+  .cell:hover{transform:none;}
+  .cem{font-size:clamp(15px,5.2vw,20px);}
+  .cnm{font-size:clamp(5.5px,1.8vw,7px);}
+
+  .center-col{padding:10px;gap:10px;}
+  .card-head,.graph-card .card-head{padding:10px 12px;}
+  .card-body{padding:11px 12px;}
+  .graph-hint{display:none;}
+  .season-panel{
+    grid-template-columns:1fr;
+    gap:8px;
+    padding:11px 12px;
+  }
+  .season-mult{justify-self:start;font-size:16px;}
+  .center-actions{grid-template-columns:1fr;}
+  .gnn-summary,.detail-btn{min-height:auto;}
+  .detail-btn{padding:11px 12px;}
+
+  .right-col{
+    display:block;
+    border-top:1px solid var(--border);
+  }
+  .shop-section,.panel-section{
+    border-right:none;
+    border-top:1px solid var(--border);
+    padding:12px;
+  }
+  .shop-section{border-top:none;}
+  .shop-tabs{gap:5px;}
+  .tab{flex:1 1 auto;text-align:center;padding:7px 8px;font-size:10px;}
+  .slist{max-height:none;}
+  .si{padding:9px 10px;}
+  .si-desc{white-space:normal;line-height:1.35;}
+
+  .overlay{
+    align-items:flex-start;
+    padding:10px;
+    overflow-y:auto;
+  }
+  .modal,.wide-modal,.event-guide-modal{
+    max-width:none!important;
+    width:min(100%,560px)!important;
+    max-height:none!important;
+    padding:18px;
+    border-radius:14px;
+  }
+  .modal-head{align-items:flex-start;}
+  .modal table{
+    min-width:420px;
+  }
+  .modal [style*="display:flex"]{
+    flex-wrap:wrap;
+    min-width:0;
+  }
+  .modal [style*="justify-content:space-between"] > div,
+  .modal [style*="flex:1"]{
+    min-width:0;
+  }
+  .modal input[style*="width:80%"]{
+    width:100%!important;
+  }
+  .mbtns{flex-direction:column;}
+  .toast{
+    left:10px;
+    right:10px;
+    bottom:14px;
+    transform:translateY(60px);
+    text-align:center;
+    white-space:normal;
+  }
+  .toast.show{transform:translateY(0);}
+}
+
+@media (max-width:460px){
+  .topbar{gap:7px;}
+  .logo{flex:1 1 auto;}
+  .coin-block{margin-left:auto;}
+  .eco-wrap{flex-basis:100%;order:5;}
+  .top-btns{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .stats-bar{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .col-title{font-size:12px;}
+  .col-title-sub{font-size:9px;}
+  .sel-hint{width:100%;text-align:center;}
+  .lgrid-wrap{padding:8px;}
+  .lgrid{gap:3px;}
+  .card-title,.graph-card .card-title{font-size:11.5px;}
+  .season-title{font-size:12px;}
+  .event-guide-card{grid-template-columns:24px 1fr;gap:7px;}
+  .event-guide-icon{width:24px;font-size:18px;}
+  .event-guide-meta{margin-left:0;}
+}
 </style>
 </head>
 <body>
@@ -822,6 +1074,16 @@ body{
   </div>
 </div>
 
+<!-- EVENT GUIDE MODAL -->
+<div class="overlay" id="eventGuideModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal event-guide-modal">
+    <div class="modal-head">
+      <div class="modal-title" style="margin:0">🎲 隨機事件說明</div>
+      <button class="modal-close" onclick="document.getElementById('eventGuideModal').style.display='none'">×</button>
+    </div>
+    <div id="eventGuideContent"></div>
+  </div>
+</div>
 <!-- INFO MODAL -->
 <div class="overlay" id="infoModal" style="display:none">
   <div class="modal" style="max-width:340px">
@@ -850,11 +1112,12 @@ body{
 <script>
 // ═══════════════════════════════════════════════════════════════════════════════
 // ── BACKEND API INTEGRATION ──────────────────────────────────────────────────
-// Change BACKEND_URL to your Render deployment URL after deploying.
+// Azure deployment uses the same host for API requests.
 // While developing locally: run `uvicorn main:app` and use http://localhost:8000
 // ═══════════════════════════════════════════════════════════════════════════════
-//var BACKEND_URL = 'https://YOUR-APP.onrender.com'; // ← change this after deploy
-var BACKEND_URL = 'http://localhost:8000';
+// When served by FastAPI on Azure, use the same host for API requests.
+// If opened directly as a local file, fall back to the local development backend.
+var BACKEND_URL = window.location.protocol === 'file:' ? 'http://localhost:8000' : window.location.origin;
 
 // ── Crypto helpers ────────────────────────────────────────────────────────────
 // Uses Web Crypto API (SHA-256) instead of djb2.
@@ -1341,7 +1604,51 @@ function saveAllSlots(slots) {
   localStorage.setItem('ecochain_saves', JSON.stringify(slots));
 }
 
+function getSavedUpgradeState(sd) {
+  var state = {};
+  (sd && sd.upgrades || []).forEach(function(u) {
+    if (u && u.id) state[u.id] = !!u.bought;
+  });
+  return state;
+}
+
+function getLegalGridSize(sd) {
+  var state = getSavedUpgradeState(sd);
+  var savedSize = Math.max(35, Math.min(49, parseInt(sd && sd.gridSize, 10) || 35));
+  var upgradeSize = 35 + (state.expand1 ? 7 : 0) + (state.expand2 ? 7 : 0);
+  return Math.max(savedSize, upgradeSize);
+}
+
+function syncGridUpgradeFlags(size, state) {
+  state = state || {};
+  if (size >= 42) state.expand1 = true;
+  if (size >= 49) state.expand2 = true;
+  return state;
+}
+
+function normalizeSaveData(sd) {
+  if (!sd || typeof sd !== 'object' || Array.isArray(sd)) return null;
+  var size = getLegalGridSize(sd);
+  var normalized = {};
+  for (var k in sd) normalized[k] = sd[k];
+  normalized.gridSize = size;
+  normalized.cells = (sd.cells || []).slice(0, size);
+  while (normalized.cells.length < size) normalized.cells.push(null);
+  var state = syncGridUpgradeFlags(size, getSavedUpgradeState(sd));
+  normalized.upgrades = (sd.upgrades || []).map(function(u) {
+    return u && u.id ? { id: u.id, bought: !!state[u.id] } : u;
+  });
+  ['expand1','expand2'].forEach(function(id) {
+    var exists = normalized.upgrades.some(function(u){ return u && u.id === id; });
+    if (!exists && state[id]) normalized.upgrades.push({ id: id, bought: true });
+  });
+  return normalized;
+}
+
 function buildSaveData() {
+  gridSize = Math.max(35, Math.min(49, parseInt(gridSize, 10) || 35));
+  if (cells.length > gridSize) cells = cells.slice(0, gridSize);
+  while (cells.length < gridSize) cells.push(null);
   return {
     coins: coins, totalEarned: totalEarned,
     cells: cells.map(function(c) { return c ? { id: c.id, name: c.name, dEmoji: c.dEmoji || c.emoji } : null; }),
@@ -1355,15 +1662,16 @@ function buildSaveData() {
 }
 
 function restoreSaveData(sd) {
+  sd = sd || {};
   coins = sd.coins || 120;
   totalEarned = sd.totalEarned || 120;
   seasonIdx = sd.seasonIdx || 0;
   seasonTick = sd.seasonTick || 0;
   unlockedAch = sd.unlockedAch || {};
-  gridSize = sd.gridSize || 35;
+  gridSize = getLegalGridSize(sd);
   entityXP = sd.entityXP || {};
   cells = [];
-  (sd.cells || []).forEach(function(c) {
+  (sd.cells || []).slice(0, gridSize).forEach(function(c) {
     if (!c) { cells.push(null); return; }
     var item = findItem(c.id);
     if (item) {
@@ -1373,9 +1681,16 @@ function restoreSaveData(sd) {
     } else { cells.push(null); }
   });
   while (cells.length < gridSize) cells.push(null);
-  if (sd.upgrades) sd.upgrades.forEach(function(u) {
-    var found = UPGRADES.find(function(x) { return x.id === u.id; });
-    if (found && u.bought && !found.bought) { found.bought = true; found.effect(); }
+  droughtBonus=1; summerBonus=1; compostMult=1; sensorOn=false;
+  UPGRADES.forEach(function(u){ u.bought=false; });
+  var upgradeState = syncGridUpgradeFlags(gridSize, getSavedUpgradeState(sd));
+  UPGRADES.forEach(function(u) {
+    if (!upgradeState[u.id]) return;
+    u.bought = true;
+    if (u.id === 'rainwater') droughtBonus = 1.2;
+    else if (u.id === 'solar') summerBonus = 1.15;
+    else if (u.id === 'composter') compostMult = 2;
+    else if (u.id === 'sensor') sensorOn = true;
   });
   updateAll(); updateSeason(); renderUpgrades();
   triggerGNN();
@@ -1692,12 +2007,14 @@ async function doDeleteSlot(idx) {
 // ── Cloud Sync (per slot) — requires Bearer token ────────────────────────────
 async function cloudSaveSlot(slotId, charName, saveData) {
   if (!apiOnline) return;
+  saveData = normalizeSaveData(saveData);
+  if (!slotId || !saveData) return;
   try {
     var headers = await authHeaders(slotId);
     if (!headers['Authorization']) return;
     var r = await fetch(BACKEND_URL + '/save', {
       method: 'POST', headers: headers,
-      body: JSON.stringify({ player_name: charName, save_data: saveData }),
+      body: JSON.stringify({ player_name: (charName || '匿名玩家').slice(0, 30), save_data: saveData }),
       signal: AbortSignal.timeout(8000),
     });
     if (r.status === 401) { removeToken(slotId); addLog('☁️ Token 已過期，下次讀檔時重新登入', 'warn'); return; }
@@ -2446,10 +2763,7 @@ function triggerRandomEvent(){
   var ev=EVENTS[Math.floor(Math.random()*EVENTS.length)];
   activeEvent=ev; eventTimer=ev.duration*10;
   ev.effect();
-  var bar=document.getElementById('eventBar');
-  bar.className='event-bar ev-'+ev.type;
-  bar.textContent=ev.msg;
-  bar.style.display='flex';
+  renderActiveEventBar(ev);
   updateHUD();
 }
 
@@ -2506,8 +2820,9 @@ var droughtBonus=1, summerBonus=1, compostMult=1, sensorOn=false;
 var gridSize=35;
 
 function expandGrid(n){
-  gridSize+=n;
-  for(var i=0;i<n;i++) cells.push(null);
+  var oldSize = Math.max(35, Math.min(49, parseInt(gridSize, 10) || 35));
+  gridSize = Math.min(49, oldSize + n);
+  for(var i=cells.length;i<gridSize;i++) cells.push(null);
   // update grid columns CSS dynamically
   document.getElementById('landGrid').style.gridTemplateColumns='repeat(7,1fr)';
   renderLand();
@@ -2596,6 +2911,47 @@ function renderEncycTabs(){
   document.getElementById('encycTabs').innerHTML=html;
 }
 function switchEncycTab(k){encycTab=k;renderEncycTabs();renderEncycContent();}
+function renderEventGuideHtml(){
+  var totalWeight=EVENTS.reduce(function(sum,e){return sum+(e.weight||1);},0);
+  var html='<div class="event-guide-intro">事件發生時會暫時改變生態分數或收益。一次只會有一個事件生效，效果結束後才會抽下一個。</div>';
+  EVENTS.forEach(function(ev){
+    var chance=(ev.weight||1)/totalWeight;
+    var chanceLabel=chance>=0.10?'常見':(chance>=0.06?'普通':'稀有');
+    var typeLabel=ev.type==='good'?'正面':(ev.type==='bad'?'負面':'特殊');
+    var typeStyle=ev.type==='good'
+      ? 'background:#d1fae5;color:#065f46;border-color:#a7f3d0'
+      : (ev.type==='bad'
+        ? 'background:#fee2e2;color:#991b1b;border-color:#fecaca'
+        : 'background:#dbeafe;color:#1e40af;border-color:#bfdbfe');
+    var icon=(ev.msg||'🎲').split(' ')[0]||'🎲';
+    html+='<div class="event-guide-card">'
+      +'<div class="event-guide-icon">'+icon+'</div>'
+      +'<div class="event-guide-main">'
+      +'<div class="event-guide-head">'
+      +'<span class="event-guide-name">'+ev.name+'</span>'
+      +'<span class="event-guide-pill" style="'+typeStyle+'">'+typeLabel+'</span>'
+      +'<span class="event-guide-meta">'+chanceLabel+' · '+ev.duration+' 秒</span>'
+      +'</div>'
+      +'<div class="event-guide-effect">'+ev.effectText+'</div>'
+      +'<div class="event-guide-msg">'+ev.msg+'</div>'
+      +'</div></div>';
+  });
+  return html;
+}
+
+function openEventGuide(){
+  var out=document.getElementById('eventGuideContent');
+  if(out) out.innerHTML=renderEventGuideHtml();
+  document.getElementById('eventGuideModal').style.display='flex';
+}
+
+function renderActiveEventBar(ev){
+  var bar=document.getElementById('eventBar');
+  if(!bar) return;
+  bar.className='event-bar ev-'+ev.type;
+  bar.innerHTML='<span class="event-msg">'+ev.msg+'</span><button class="event-info-btn" type="button" title="查看隨機事件說明" aria-label="查看隨機事件說明" onclick="openEventGuide();event.stopPropagation();">🎲</button>';
+  bar.style.display='flex';
+}
 function renderEncycContent(){
   if(encycTab==='events'){
     var totalWeight=EVENTS.reduce(function(sum,e){return sum+(e.weight||1);},0);
@@ -2964,10 +3320,7 @@ triggerRandomEvent=function(){
   var ev=pickWeightedEvent(pool);
   activeEvent=ev; eventTimer=ev.duration*10;
   ev.effect();
-  var bar=document.getElementById('eventBar');
-  bar.className='event-bar ev-'+ev.type;
-  bar.textContent=ev.msg;
-  bar.style.display='flex';
+  renderActiveEventBar(ev);
   addLog(ev.msg, ev.type);
   updateHUD();
 };

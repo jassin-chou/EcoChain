@@ -1,7 +1,7 @@
 # EcoChain — 快速開始 & 協作指南
 
 > 這份 README 的目標：**組員 clone 下來照著做就能跑起來**。
-> 本地只需要跑後端 + 前端 HTML，不需要設定 Render / Firebase。
+> 本地只需要跑後端 + 前端 HTML，不需要設定 Azure / Firebase。
 
 ---
 
@@ -11,7 +11,7 @@
 2. [本地跑起來（5分鐘版）](#本地跑起來5分鐘版)
 3. [完整環境設定](#完整環境設定)
 4. [Git 分支協作指南](#git-分支協作指南)
-5. [部署到 Render（管理員用）](#部署到-render管理員用)
+5. [部署到 Azure（管理員用）](#部署到-azure管理員用)
 6. [檔案說明](#檔案說明)
 7. [常見錯誤排除](#常見錯誤排除)
 
@@ -22,7 +22,7 @@
 ```
 前端 HTML (瀏覽器)
     ↕  HTTP
-FastAPI 後端 (本地 port 8000 / Render 雲端)
+FastAPI 後端 (本地 port 8000 / Azure 雲端)
     ↕
 PyTorch GNN 模型 (ecochain_gnn.pt)   ← 需要先 train.py 產生
     ↕
@@ -367,34 +367,32 @@ git stash pop      # 取回
 
 ---
 
-## 部署到 Render（管理員用）
+## 部署到 Azure（管理員用）
 
 ### GitHub Secrets 設定
 GitHub repo → Settings → Secrets → Actions → New repository secret
 
 | Secret | 值 |
 |--------|-----|
-| `RENDER_DEPLOY_HOOK_URL` | Render Dashboard → Settings → Deploy Hook |
-| `RENDER_APP_URL` | `https://ecochain-backend.onrender.com` |
+| `AZURE_WEBAPP_PUBLISH_PROFILE` | Azure App Service → Get publish profile |
 
-### Render 環境變數
-Render Dashboard → Environment
+### Azure 環境變數
+Azure App Service → Settings → Environment variables
 
 | 變數 | 說明 |
 |------|------|
 | `FIREBASE_CREDS_JSON` | `serviceAccountKey.json` 的完整 JSON 字串（整個貼上去） |
 | `TOKEN_SECRET` | 執行 `python -c "import secrets; print(secrets.token_hex(32))"` 產生 |
 | `RETRAIN_SECRET` | 自訂密碼 |
-| `ALLOW_ORIGINS` | 前端網址，如 `https://你的遊戲.vercel.app` |
+| `ALLOW_ORIGINS` | 前端網址 |
 | `ENV` | `production` |
 
 ### 推送觸發自動部署
 
 ```bash
-git checkout main
-git merge dev   # 把 dev 合進 main
-git push origin main
-# → GitHub Actions 自動：test → train → deploy
+git checkout develop
+git push origin develop
+# → GitHub Actions 自動部署到 Azure Web App
 ```
 
 ---
@@ -414,8 +412,7 @@ git push origin main
 | `real_food_webs.json` | 真實食物網資料集 | 不用動 |
 | `requirements.txt` | Python 套件清單 | 加套件時更新 |
 | `_env` | `.env` 範本 | **複製成 `.env` 然後填入自己的值** |
-| `render.yaml` | Render 部署設定 | 不用動 |
-| `.github/workflows/deploy.yml` | CI/CD pipeline | 不用動 |
+| `.github/workflows/azure-webapp.yml` | Azure Web App 部署流程 | 部署設定變更時才需要動 |
 
 > ⚠️ **不要 commit 的檔案**（.gitignore 已設定）：
 > `.env`, `serviceAccountKey.json`, `models/ecochain_gnn.pt`, `species2vec.pt`
