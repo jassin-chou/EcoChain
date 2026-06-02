@@ -80,7 +80,7 @@ RATE_LIMITS = {
 
 超過限制 → HTTP 429，header 帶 `Retry-After: 60`。
 
-實作是 in-memory（dict），適合單一 worker。若 Render 多 worker 或需要持久化，
+實作是 in-memory（dict），適合單一 worker。若 Azure 多 instance 或需要持久化，
 換成 Redis（`slowapi` 套件）即可，改動只在 middleware 那段。
 
 ---
@@ -128,8 +128,8 @@ RATE_LIMITS = {
 現在透過 env var 設定：
 
 ```bash
-# .env 或 Render Environment Variables
-ALLOW_ORIGINS=https://your-frontend.vercel.app,https://your-other-domain.com
+# .env 或 Azure App Service Environment Variables
+ALLOW_ORIGINS=https://your-frontend-domain.example,https://your-other-domain.example
 ```
 
 不設 `ALLOW_ORIGINS` 時 fallback 為 `["*"]`（本地開發用）。
@@ -151,16 +151,16 @@ ALLOW_ORIGINS=https://your-frontend.vercel.app,https://your-other-domain.com
 docs_url=None if os.getenv("ENV") == "production" else "/docs",
 ```
 
-在 Render 加入環境變數 `ENV=production` 即可。
+在 Azure App Service 加入環境變數 `ENV=production` 即可。
 
 ---
 
 ## 部署 Checklist
 
 ```bash
-# Render Environment Variables（必加）
+# Azure App Service Environment Variables（必加）
 TOKEN_SECRET=<至少 32 字元的隨機字串>   # python -c "import secrets; print(secrets.token_hex(32))"
-ALLOW_ORIGINS=https://你的前端網址.vercel.app
+ALLOW_ORIGINS=https://你的前端網址
 ENV=production
 RETRAIN_SECRET=<自訂密碼>
 GOOGLE_SHEET_ID=<你的 Sheets ID>
@@ -175,6 +175,6 @@ GOOGLE_CREDS_JSON=<google_creds.json 全文>
 |------|------|
 | 密碼強度 | 前端 djb2 hash 非密碼學安全，但密碼本身不上傳後端，只保存在 localStorage |
 | 跨裝置登入 | 換裝置後需重新建立角色（或手動複製 localStorage token）|
-| HTTPS | 由 Render 自動處理，本地開發用 localhost 即可 |
+| HTTPS | 由 Azure App Service 自動處理，本地開發用 localhost 即可 |
 | DB injection | Google Sheets API 本身無 SQL，不存在 injection 問題 |
-| 多 worker Rate Limit | 若 Render 開多個 instance，rate limit 不共享 → 換 Redis |
+| 多 instance Rate Limit | 若 Azure 開多個 instance，rate limit 不共享 → 換 Redis |

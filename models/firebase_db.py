@@ -28,7 +28,7 @@ Firestore 集合設計：
         timestamp     : str
 
 環境變數（擇一設定）：
-  FIREBASE_CREDS_JSON   — 完整 serviceAccountKey.json 內容（Render 用）
+  FIREBASE_CREDS_JSON   — 完整 serviceAccountKey.json 內容（雲端部署用）
   FIREBASE_CREDS_PATH   — 本地 serviceAccountKey.json 路徑（本地開發用）
   FIREBASE_PROJECT_ID   — 若使用 Application Default Credentials 時需要
 """
@@ -59,7 +59,7 @@ class FirestoreDB:
             creds_path = os.getenv("FIREBASE_CREDS_PATH", "serviceAccountKey.json")
 
             if creds_json:
-                # Render / 正式環境：從環境變數讀取整個 JSON
+                # 正式環境：從環境變數讀取整個 JSON
                 cred_dict = json.loads(creds_json)
                 cred = credentials.Certificate(cred_dict)
             elif os.path.exists(creds_path):
