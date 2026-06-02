@@ -141,7 +141,7 @@ body{
 ══════════════════════════════════════════ */
 .wrap{
   display:grid;
-  grid-template-columns:280px 1fr 240px;
+  grid-template-columns:280px minmax(0,1fr) 240px;
   grid-template-rows:auto 1fr;
   min-height:calc(100vh - 52px);
   gap:0;
@@ -233,6 +233,7 @@ body{
   border-right:1px solid var(--border);
   display:flex;flex-direction:column;
   overflow:hidden;
+  min-width:0;
 }
 .col-head{
   display:flex;align-items:center;justify-content:space-between;
@@ -305,6 +306,7 @@ body{
   padding:12px;
   display:flex;flex-direction:column;gap:12px;
   transition:background .5s;
+  min-width:0;
 }
 
 /* ══════════════════════════════════════════
@@ -315,6 +317,7 @@ body{
   border-left:1px solid var(--border);
   overflow-y:auto;
   display:flex;flex-direction:column;
+  min-width:0;
 }
 
 /* ══════════════════════════════════════════
@@ -623,6 +626,207 @@ body{
 /* progress bars used in GNN */
 .pbar-wrap{height:5px;background:var(--border);border-radius:99px;overflow:hidden;}
 .pbar-fill{height:100%;border-radius:99px;transition:width .6s;}
+
+/* RESPONSIVE */
+@media (max-width:1180px){
+  .topbar{
+    height:auto;
+    min-height:52px;
+    padding:8px 14px;
+    flex-wrap:wrap;
+    align-content:center;
+  }
+  .eco-wrap{order:5;flex:1 1 260px;max-width:none;}
+  .top-btns{margin-left:auto;}
+  .topbar > div:last-child{margin-left:auto;}
+  .wrap{
+    grid-template-columns:minmax(260px,320px) minmax(0,1fr);
+    grid-template-rows:auto auto auto;
+    min-height:calc(100vh - 68px);
+  }
+  .stats-bar{grid-column:1/-1;overflow-x:auto;padding:0 12px;}
+  .stat-item{padding:9px 12px;flex:0 0 auto;}
+  .left-col{grid-column:1;border-right:1px solid var(--border);}
+  .center-col{grid-column:2;}
+  .right-col{
+    grid-column:1/-1;
+    border-left:none;
+    border-top:1px solid var(--border);
+    display:grid;
+    grid-template-columns:1.2fr 1fr 1fr 1fr;
+    align-items:start;
+  }
+  .right-col .divider{display:none;}
+  .shop-section,.panel-section{border-top:none;border-right:1px solid var(--border);}
+  .right-col > :last-child{border-right:none;}
+  .slist{max-height:260px;}
+}
+
+@media (max-width:820px){
+  body{overflow-x:hidden;}
+  .topbar{
+    position:sticky;
+    gap:8px;
+    padding:8px 10px;
+  }
+  .logo{font-size:15px;}
+  .coin-block{padding:4px 8px;}
+  .coin-val{font-size:15px;}
+  .season-badge{font-size:10px;padding:3px 8px;}
+  .top-btns{
+    order:6;
+    width:100%;
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:5px;
+  }
+  .tbtn{
+    width:100%;
+    padding:7px 5px;
+    font-size:10px;
+    text-align:center;
+  }
+  .topbar > div:last-child{
+    order:4;
+    align-items:flex-start!important;
+    margin-left:0!important;
+  }
+  #apiStatus{font-size:8.5px;}
+
+  .wrap{
+    display:flex;
+    flex-direction:column;
+    min-height:auto;
+  }
+  .stats-bar{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:0;
+    padding:0;
+    overflow:visible;
+  }
+  .stat-item{
+    min-width:0;
+    padding:9px 8px;
+    justify-content:center;
+    border-right:1px solid var(--border);
+    border-bottom:1px solid var(--border);
+  }
+  .stat-item[style*="margin-left:auto"]{margin-left:0!important;}
+  .stat-num{font-size:16px;}
+  .stat-lbl{font-size:9px;}
+  .event-bar{
+    margin:8px 10px!important;
+    align-self:stretch!important;
+    font-size:11px;
+  }
+
+  .left-col,.center-col,.right-col{
+    width:100%;
+    border-left:none;
+    border-right:none;
+    overflow:visible;
+  }
+  .col-head{
+    padding:12px 12px 9px;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .sel-hint{margin-left:auto;}
+  .lgrid-wrap{padding:10px;}
+  .lgrid{gap:4px;}
+  .cell{border-radius:8px;}
+  .cell:hover{transform:none;}
+  .cem{font-size:clamp(15px,5.2vw,20px);}
+  .cnm{font-size:clamp(5.5px,1.8vw,7px);}
+
+  .center-col{padding:10px;gap:10px;}
+  .card-head,.graph-card .card-head{padding:10px 12px;}
+  .card-body{padding:11px 12px;}
+  .graph-hint{display:none;}
+  .season-panel{
+    grid-template-columns:1fr;
+    gap:8px;
+    padding:11px 12px;
+  }
+  .season-mult{justify-self:start;font-size:16px;}
+  .center-actions{grid-template-columns:1fr;}
+  .gnn-summary,.detail-btn{min-height:auto;}
+  .detail-btn{padding:11px 12px;}
+
+  .right-col{
+    display:block;
+    border-top:1px solid var(--border);
+  }
+  .shop-section,.panel-section{
+    border-right:none;
+    border-top:1px solid var(--border);
+    padding:12px;
+  }
+  .shop-section{border-top:none;}
+  .shop-tabs{gap:5px;}
+  .tab{flex:1 1 auto;text-align:center;padding:7px 8px;font-size:10px;}
+  .slist{max-height:none;}
+  .si{padding:9px 10px;}
+  .si-desc{white-space:normal;line-height:1.35;}
+
+  .overlay{
+    align-items:flex-start;
+    padding:10px;
+    overflow-y:auto;
+  }
+  .modal,.wide-modal,.event-guide-modal{
+    max-width:none!important;
+    width:min(100%,560px)!important;
+    max-height:none!important;
+    padding:18px;
+    border-radius:14px;
+  }
+  .modal-head{align-items:flex-start;}
+  .modal table{
+    min-width:420px;
+  }
+  .modal [style*="display:flex"]{
+    flex-wrap:wrap;
+    min-width:0;
+  }
+  .modal [style*="justify-content:space-between"] > div,
+  .modal [style*="flex:1"]{
+    min-width:0;
+  }
+  .modal input[style*="width:80%"]{
+    width:100%!important;
+  }
+  .mbtns{flex-direction:column;}
+  .toast{
+    left:10px;
+    right:10px;
+    bottom:14px;
+    transform:translateY(60px);
+    text-align:center;
+    white-space:normal;
+  }
+  .toast.show{transform:translateY(0);}
+}
+
+@media (max-width:460px){
+  .topbar{gap:7px;}
+  .logo{flex:1 1 auto;}
+  .coin-block{margin-left:auto;}
+  .eco-wrap{flex-basis:100%;order:5;}
+  .top-btns{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .stats-bar{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .col-title{font-size:12px;}
+  .col-title-sub{font-size:9px;}
+  .sel-hint{width:100%;text-align:center;}
+  .lgrid-wrap{padding:8px;}
+  .lgrid{gap:3px;}
+  .card-title,.graph-card .card-title{font-size:11.5px;}
+  .season-title{font-size:12px;}
+  .event-guide-card{grid-template-columns:24px 1fr;gap:7px;}
+  .event-guide-icon{width:24px;font-size:18px;}
+  .event-guide-meta{margin-left:0;}
+}
 </style>
 </head>
 <body>
