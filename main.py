@@ -35,7 +35,7 @@ import time
 import asyncio
 from collections import defaultdict
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import Optional, Any
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Header, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -233,6 +233,9 @@ class AnalyzeResponse(BaseModel):
     top_recommendations: list[str]
     issues: list[dict]
     positives: list[str]
+    gnn_score: Optional[float] = None
+    base_score: Optional[float] = None
+    score_explanation: Optional[dict[str, Any]] = None
     model_version: str = "gnn-v2"
 
 
@@ -425,6 +428,81 @@ def apply_event_effects(
         "id": event_id,
         "score_delta": event["score_delta"],
         "gps_mult": event["gps_mult"],
+        "score_before": round(score, 1),
+        "score_after": adjusted_score,
+    }
+
+
+def compute_explainable_score(counts: dict) -> dict[str, Any]:
+    import math
+    from models.gnn import TROPHIC, IS_WATER, IS_TERRAIN
+
+    total = sum(counts.values())
+    species_types = len(counts)
+
+    shannon = 0.0
+    if total > 0 and species_types > 1:
+        h_raw = -sum((n / total) * math.log(n / total) for n in counts.values() if n > 0)
+        h_max = math.log(species_types)
+        shannon = h_raw / h_max if h_max > 0 else 0.0
+
+    has_producer = any(TROPHIC.get(s, 0) == 0 and s not in IS_TERRAIN for s in counts)
+    has_herbivore = any(TROPHIC.get(s, 0) == 1 for s in counts)
+    has_omnivore = any(TROPHIC.get(s, 0) == 1.5 for s in counts)
+    has_predator = any(TROPHIC.get(s, 0) >= 2 for s in counts)
+
+    trophic = (
+        (1 / 3 if has_producer else 0)
+        + (1 / 3 if (has_herbivore or has_omnivore) else 0)
+        + (1 / 3 if has_predator else 0)
+    )
+    if (has_herbivore or has_omnivore) and not has_producer:
+        trophic -= 0.25
+    if has_predator and not has_herbivore and not has_omnivore:
+        trophic -= 0.25
+    trophic = max(0.0, min(1.0, trophic))
+
+    has_water = "pond" in counts or "stream" in counts
+    has_aquatic = any(s in IS_WATER and TROPHIC.get(s, 0) > 0 for s in counts)
+    aquatic = 0.10 if has_water and has_aquatic else (-0.10 if has_aquatic and not has_water else 0.0)
+
+    has_plants = has_producer
+    has_pollinator = "bee" in counts or "butterfly" in counts
+    pollinator = 0.05 if has_plants and has_pollinator else 0.0
+
+    infrastructure = min(
+        (0.03 if "compost" in counts else 0)
+        + (0.03 if "birdhouse" in counts else 0)
+        + (0.02 if "rockpile" in counts else 0)
+        + (0.02 if "fence" in counts else 0),
+        0.10,
+    )
+
+    components = {
+        "base": 0.35,
+        "shannon": shannon * 0.25,
+        "trophic": trophic * 0.60,
+        "aquatic": aquatic,
+        "pollinator": pollinator,
+        "infrastructure": infrastructure,
+    }
+    raw = sum(components.values())
+    score = round(max(5.0, min(100.0, raw / 1.45 * 100)), 1)
+    if total == 0:
+        score = 10.0
+
+    return {
+        "score": score,
+        "raw": raw,
+        "max_raw": 1.45,
+        "components": components,
+        "shannon": round(shannon, 3),
+        "trophic": round(trophic, 3),
+        "total": total,
+        "species_types": species_types,
+        "has_producer": has_producer,
+        "has_consumer": has_herbivore or has_omnivore,
+        "has_predator": has_predator,
     }
 
 
@@ -618,7 +696,9 @@ def delete_account(
 def analyze(req: AnalyzeRequest, bg: BackgroundTasks):
     counts  = cells_to_counts(req.cells)
     result  = predict(counts)
-    score   = result["score"]
+    gnn_score = result["score"]
+    score_info = compute_explainable_score(counts)
+    score   = score_info["score"]
     top_rec = result["top_recommendations"]
     gps     = compute_gps(score, counts, req.season, req.gps_event_bonus)
     issues, positives, _ = build_issues_positives(score, counts)
@@ -627,6 +707,9 @@ def analyze(req: AnalyzeRequest, bg: BackgroundTasks):
         score=score, gps=gps,
         top_recommendations=top_rec,
         issues=issues, positives=positives,
+        gnn_score=gnn_score,
+        base_score=score_info["score"],
+        score_explanation=score_info,
     )
 
 
@@ -634,7 +717,9 @@ def analyze(req: AnalyzeRequest, bg: BackgroundTasks):
 def analyze_detail(req: AnalyzeRequest):
     counts  = cells_to_counts(req.cells)
     result  = predict(counts)
-    score   = result["score"]
+    gnn_score = result["score"]
+    score_info = compute_explainable_score(counts)
+    score   = score_info["score"]
     top_rec = result["top_recommendations"]
     gps     = compute_gps(score, counts, req.season, req.gps_event_bonus)
     issues, positives, shannon = build_issues_positives(score, counts)
@@ -661,11 +746,14 @@ def analyze_detail(req: AnalyzeRequest):
 
     return {
         "score": score, "gps": gps,
+        "base_score": score_info["score"], "gnn_score": gnn_score,
+        "score_explanation": score_info,
         "recommendations": rec_enriched,
         "issues": issues, "positives": positives,
-        "counts": counts, "shannon": round(shannon, 3),
+        "counts": counts,
+        "shannon": score_info["shannon"], "trophic": score_info["trophic"],
         "event_effect": event_meta,
-        "model_version": "gnn-v3",
+        "model_version": "Explainable+GNN-v3",
     }
 
 

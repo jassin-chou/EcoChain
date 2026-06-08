@@ -104,9 +104,27 @@ body{
 .coin-val{font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:#fbbf24;}
 .gps-val{font-size:10px;color:rgba(255,255,255,.55);font-weight:600;}
 
-.eco-wrap{flex:1;min-width:140px;max-width:240px;}
-.eco-lbl{font-size:10px;font-weight:600;color:rgba(255,255,255,.55);margin-bottom:4px;display:flex;justify-content:space-between;}
+.eco-wrap{flex:1;min-width:170px;max-width:270px;}
+.eco-lbl{font-size:10px;font-weight:600;color:rgba(255,255,255,.55);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
 .eco-lbl strong{color:#fff;font-weight:700;}
+.eco-title{display:flex;align-items:center;gap:5px;min-width:0;}
+.eco-info-btn{
+  width:18px;height:18px;border-radius:6px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.08);
+  color:rgba(255,255,255,.78);
+  cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;line-height:1;
+}
+.eco-info-btn:hover{background:rgba(255,255,255,.16);color:#fff;}
+.eco-mini{
+  margin-top:3px;
+  display:flex;align-items:center;gap:4px;
+  font-size:8.5px;color:rgba(255,255,255,.46);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.eco-mini span{overflow:hidden;text-overflow:ellipsis;}
 .eco-track{height:6px;background:rgba(255,255,255,.12);border-radius:99px;overflow:hidden;}
 .eco-fill{height:100%;border-radius:99px;transition:width .7s,background .5s;}
 
@@ -224,6 +242,27 @@ body{
 .event-guide-meta{font-size:9px;color:var(--text3);margin-left:auto;white-space:nowrap;}
 .event-guide-effect{font-size:10.5px;color:var(--text);line-height:1.55;font-weight:700;}
 .event-guide-msg{font-size:9.5px;color:var(--text2);line-height:1.5;margin-top:3px;}
+.eco-score-modal{max-width:520px;max-height:85vh;overflow-y:auto;}
+.score-meter-row{display:grid;grid-template-columns:84px 1fr 40px;gap:8px;align-items:center;margin-bottom:7px;}
+.score-meter-name{font-size:10px;font-weight:700;color:var(--text2);}
+.score-meter-track{height:6px;background:var(--surface2);border-radius:99px;overflow:hidden;border:1px solid var(--border);}
+.score-meter-fill{height:100%;border-radius:99px;transition:width .4s;}
+.score-meter-val{font-size:10px;font-weight:900;text-align:right;color:var(--text2);}
+.score-calc{
+  margin-top:8px;
+  padding:8px 10px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--surface2);
+}
+.score-calc-title{font-size:10px;font-weight:900;color:var(--text);margin-bottom:6px;}
+.score-calc-row{
+  display:flex;justify-content:space-between;gap:10px;
+  font-size:9.5px;line-height:1.55;color:var(--text2);
+  padding:2px 0;
+}
+.score-calc-row b{font-weight:900;color:var(--text);}
+.score-calc-note{margin-top:6px;font-size:9px;line-height:1.5;color:var(--text3);}
 
 /* ══════════════════════════════════════════
    LEFT SIDEBAR — Land Grid
@@ -848,12 +887,13 @@ body{
 
   <div class="eco-wrap">
     <div class="eco-lbl">
-      <span>🧠 GNN 生態健康度</span>
+      <span class="eco-title">生態健康度 <button class="eco-info-btn" type="button" title="查看分數說明" aria-label="查看生態健康度分數說明" onclick="openEcoScoreModal()">?</button></span>
       <strong><span id="ecoScoreTop">10</span>/100</strong>
     </div>
     <div class="eco-track">
       <div class="eco-fill" id="ecoFill" style="width:10%;background:var(--bad)"></div>
     </div>
+    <div class="eco-mini" id="ecoScoreMini"><span>多樣性、食物鏈與加成共同影響</span></div>
   </div>
 
   <div class="season-badge" id="seasonBadge">🌱 春季</div>
@@ -1082,6 +1122,16 @@ body{
       <button class="modal-close" onclick="document.getElementById('eventGuideModal').style.display='none'">×</button>
     </div>
     <div id="eventGuideContent"></div>
+  </div>
+</div>
+<!-- INFO MODAL -->
+<div class="overlay" id="ecoScoreModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal eco-score-modal">
+    <div class="modal-head">
+      <div class="modal-title" style="margin:0">生態健康度說明</div>
+      <button class="modal-close" onclick="document.getElementById('ecoScoreModal').style.display='none'">×</button>
+    </div>
+    <div id="ecoScoreExplainContent"></div>
   </div>
 </div>
 <!-- INFO MODAL -->
@@ -1442,6 +1492,7 @@ function updateGNNPanel(data) {
   }
   var scoreTop = document.getElementById('ecoScoreTop');
   if (scoreTop) scoreTop.textContent = Math.round(score);
+  if (typeof updateEcoScoreMini === 'function') updateEcoScoreMini(data);
   var gpsEl = document.getElementById('gpsVal');
   if (gpsEl) gpsEl.textContent = gps.toFixed(1);
   var compactBadge = document.getElementById('gnnBadgeCompact');
@@ -2321,7 +2372,11 @@ function computeGNN(){
 
   // ── 7. 最終分數 ──────────────────────────────────────────
   // raw 理論最大值 = 0.25 + 0.60 + 0.35 + 0.10 + 0.05 + 0.10 = 1.45
-  var raw = H*0.25 + T*0.60 + 0.35 + A + P + I + ecoBonus/100;
+  var formulaBase = 0.35;
+  var formulaShannon = H*0.25;
+  var formulaTrophic = T*0.60;
+  var formulaEcoBonus = ecoBonus/100;
+  var raw = formulaShannon + formulaTrophic + formulaBase + A + P + I + formulaEcoBonus;
   var score = Math.max(5, Math.min(100, Math.round(raw / 1.45 * 100)));
   if(total === 0) score = 10;
 
@@ -2374,6 +2429,18 @@ function computeGNN(){
     shannonPct: Math.round(H*100),
     trophic: T,
     speciesTypes: speciesCount,
+    formula: {
+      shannon: formulaShannon,
+      trophic: formulaTrophic,
+      base: formulaBase,
+      aquatic: A,
+      pollinator: P,
+      infrastructure: I,
+      ecoBonus: formulaEcoBonus,
+      raw: raw,
+      max: 1.45,
+      score: score
+    },
   };
 }
 
@@ -2590,6 +2657,7 @@ function updateHUD(){
   lastGps=d.gps;
   document.getElementById('ecoScoreTop').textContent=d.score;
   document.getElementById('gpsVal').textContent=d.gps.toFixed(1);
+  if (typeof updateEcoScoreMini === 'function') updateEcoScoreMini(d);
   var fill=document.getElementById('ecoFill');
   fill.style.width=d.score+'%';
   fill.style.background=d.score>=70?'#1a7f6e':d.score>=40?'#e9c46a':'#ef4444';
@@ -3567,6 +3635,124 @@ setInterval(function(){
   });
 }, 300000);
 
+</script>
+<script>
+(function(){
+  function color(score){return score>=70?'#25a08c':score>=40?'#f59e0b':'#ef4444';}
+  function bar(label,pct,c){
+    pct=Math.max(0,Math.min(100,Math.round(pct||0)));
+    return '<div class="score-meter-row"><div class="score-meter-name">'+label+'</div>'
+      +'<div class="score-meter-track"><div class="score-meter-fill" style="width:'+pct+'%;background:'+c+'"></div></div>'
+      +'<div class="score-meter-val">'+pct+'%</div></div>';
+  }
+  function pt(v){return (Number(v||0)/1.45*100).toFixed(1);}
+  function calcRow(label,value){
+    return '<div class="score-calc-row"><span>'+label+'</span><b>'+value+'</b></div>';
+  }
+  function localData(){try{return typeof computeGNN==='function'?computeGNN():{};}catch(e){return {};}}
+  function issueList(data){
+    return ((data&&(data.issues||data.iss))||[]).map(function(x){
+      if(typeof x==='string')return{type:'warn',msg:x};
+      return{type:x.type||x.t||'warn',msg:x.msg||x.m||''};
+    }).filter(function(x){return x.msg;});
+  }
+  function positiveList(data){return ((data&&(data.positives||data.pos))||[]).filter(Boolean);}
+  function explainData(data){
+    var local=localData();
+    var hasBackend=data&&data.score!==undefined;
+    var scoreInfo=hasBackend&&data.score_explanation?data.score_explanation:null;
+    var returnedScore=hasBackend?Number(data.score):Number(local.score||0);
+    var heal=Number(window.gnnHealBonus||0);
+    var eventDelta=0;
+    if(hasBackend&&data.event_effect) eventDelta=Number(data.event_effect.score_delta||0);
+    var modelScore=hasBackend?Number(data.base_score!==undefined?data.base_score:(returnedScore-eventDelta)):returnedScore;
+    var displayed=Math.min(100,returnedScore+heal);
+    var shannon=hasBackend&&data.shannon!==undefined?Number(data.shannon):Number(local.shannon||0);
+    var trophic=hasBackend&&data.trophic!==undefined?Number(data.trophic):Number(local.trophic||0);
+    var formula=local.formula||null;
+    if(scoreInfo&&scoreInfo.components){
+      formula={
+        shannon:Number(scoreInfo.components.shannon||0),
+        trophic:Number(scoreInfo.components.trophic||0),
+        base:Number(scoreInfo.components.base||0),
+        aquatic:Number(scoreInfo.components.aquatic||0),
+        pollinator:Number(scoreInfo.components.pollinator||0),
+        infrastructure:Number(scoreInfo.components.infrastructure||0),
+        ecoBonus:0,
+        raw:Number(scoreInfo.raw||0),
+        max:Number(scoreInfo.max_raw||1.45),
+        score:Number(scoreInfo.score||modelScore)
+      };
+    }
+    var effects=[],gps=[];
+    if(hasBackend&&data.event_effect){
+      var delta=eventDelta;
+      effects.push({type:delta>=0?'good':'bad',msg:'隨機事件調整健康度：'+(delta>=0?'+':'')+delta});
+    }else if(window.activeEvent&&activeEvent.name){
+      effects.push({type:activeEvent.type==='bad'?'bad':'good',msg:'目前事件：'+activeEvent.name});
+    }else if((window.ecoBonus||0)>0&&!heal){
+      effects.push({type:'good',msg:'暫時健康加成：+'+window.ecoBonus});
+    }
+    if(heal>0)effects.push({type:'good',msg:'市場道具「生態療癒」：健康度暫時 +'+heal});
+    if(typeof window.spRainTimer!=='undefined'&&window.spRainTimer>0){
+      gps.push('市場道具「人工降雨」：GPS x2，不直接增加健康度');
+    }else if(!window.activeEvent&&window.gpsEventBonus>1){
+      gps.push('市場道具或暫時效果：GPS x'+window.gpsEventBonus.toFixed(2)+'，健康度不直接增加');
+    }else if(!window.activeEvent&&window.gpsEventBonus<1){
+      gps.push('暫時收益懲罰：GPS x'+window.gpsEventBonus.toFixed(2));
+    }
+    if(window.activeEvent)gps.push('目前隨機事件可能同時影響 GPS，事件結束後恢復');
+    return{
+      modelScore:modelScore,displayedScore:displayed,
+      shannonPct:Math.round(shannon*100),trophicPct:Math.round(trophic*100),
+      speciesTypes:(scoreInfo&&scoreInfo.species_types!==undefined)?scoreInfo.species_types:(local.speciesTypes||0),
+      total:(scoreInfo&&scoreInfo.total!==undefined)?scoreInfo.total:(local.total||0),
+      eventDelta:eventDelta,heal:heal,usedBackend:hasBackend,formula:formula,gnnScore:hasBackend&&data.gnn_score!==undefined?Number(data.gnn_score):null,
+      positives:positiveList(hasBackend?data:local),issues:issueList(hasBackend?data:local),
+      effects:effects,gps:gps
+    };
+  }
+  window.updateEcoScoreMini=function(data){
+    var mini=document.getElementById('ecoScoreMini');if(!mini)return;
+    var d=explainData(data);
+    var bits=['Shannon '+d.shannonPct+'%','食物鏈 '+d.trophicPct+'%'];
+    if((window.gnnHealBonus||0)>0)bits.push('療癒 +'+window.gnnHealBonus);
+    if(window.activeEvent)bits.push('事件中');
+    mini.innerHTML='<span>'+bits.join(' - ')+'</span>';
+  };
+  window.renderEcoScoreExplain=function(data){
+    var d=explainData(data);
+    var html=bar('目前分數',d.displayedScore,color(d.displayedScore));
+    html+=bar('Shannon 多樣性',d.shannonPct,d.shannonPct>=70?'#25a08c':d.shannonPct>=40?'#f59e0b':'#ef4444');
+    html+=bar('食物鏈完整度',d.trophicPct,d.trophicPct>=70?'#25a08c':d.trophicPct>=40?'#f59e0b':'#ef4444');
+    html+='<div class="score-calc">';
+    html+='<div class="score-calc-title">公式拆解</div>';
+    if(d.formula){
+      html+=calcRow('基礎盤面','+ '+pt(d.formula.base)+' 分');
+      html+=calcRow('Shannon 多樣性','+ '+pt(d.formula.shannon)+' 分');
+      html+=calcRow('食物鏈完整度','+ '+pt(d.formula.trophic)+' 分');
+      if(d.formula.aquatic) html+=calcRow('水域棲地',(d.formula.aquatic>0?'+ ':'- ')+Math.abs(Number(pt(d.formula.aquatic)))+' 分');
+      if(d.formula.pollinator) html+=calcRow('授粉者加成','+ '+pt(d.formula.pollinator)+' 分');
+      if(d.formula.infrastructure) html+=calcRow('設施加成','+ '+pt(d.formula.infrastructure)+' 分');
+      if(d.formula.ecoBonus) html+=calcRow('暫時加成','+ '+pt(d.formula.ecoBonus)+' 分');
+      html+=calcRow('公式加總',Math.round(d.formula.score)+'/100');
+    }else{
+      html+=calcRow('基礎分數',Math.round(d.modelScore)+'/100');
+    }
+    if(d.eventDelta) html+=calcRow('隨機事件',(d.eventDelta>0?'+':'')+d.eventDelta+' 分');
+    if(d.heal) html+=calcRow('市場道具','+'+d.heal+' 分');
+    html+=calcRow('目前分數',Math.round(d.displayedScore)+'/100');
+    html+='<div class="score-calc-note">目前草地共有 '+d.total+' 個生物、'+d.speciesTypes+' 種物種。</div>';
+    return html+'</div>';
+  };
+  window.openEcoScoreModal=function(){
+    var out=document.getElementById('ecoScoreExplainContent');
+    if(out)out.innerHTML=window.renderEcoScoreExplain(window.lastGNNResult||(typeof computeGNN==='function'?computeGNN():{}));
+    var modal=document.getElementById('ecoScoreModal');
+    if(modal)modal.style.display='flex';
+  };
+  window.updateEcoScoreMini(window.lastGNNResult||(typeof computeGNN==='function'?computeGNN():{}));
+})();
 </script>
 </body>
 </html>
