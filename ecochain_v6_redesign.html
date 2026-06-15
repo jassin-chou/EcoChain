@@ -1286,9 +1286,13 @@ if (!PLAYER_ID) {
 // ── API status indicator ──────────────────────────────────────────────────────
 var apiOnline = false;
 var apiCheckInterval = null;
+var savePromptSessionKey = 'ecochain_save_prompt_seen_v1';
+var savePromptPending = false;
+var savePromptTimer = null;
 
 function setApiStatus(online) {
   apiOnline = online;
+  if (online) maybeShowSavePromptSoon();
   var el = document.getElementById('apiStatus');
   if (!el) return;
   if (online) {
@@ -1820,6 +1824,7 @@ async function doOverwriteSlot(idx) {
   });
   saveAllSlots(slots);
   cloudSaveSlot(slot.slotId, slot.charName, sd);
+  markSavePromptSeen();
   document.getElementById('saveModal').style.display = 'none';
   toast('💾 「' + slot.charName + '」存檔成功！');
   addLog('💾 存檔：' + slot.charName, 'good');
@@ -1859,10 +1864,61 @@ async function doNewSlotSave() {
   };
   slots.push(newSlot);
   saveAllSlots(slots);
+  markSavePromptSeen();
   document.getElementById('saveModal').style.display = 'none';
   toast('💾 新角色「' + name + '」建立成功！');
   addLog('💾 新角色存檔：' + name, 'good');
   cloudSaveSlot(slotId, name, sd);
+}
+
+function markSavePromptSeen() {
+  try { sessionStorage.setItem(savePromptSessionKey, '1'); } catch(e) {}
+  savePromptPending = false;
+}
+
+function hasSavePromptBeenSeen() {
+  try { return sessionStorage.getItem(savePromptSessionKey) === '1'; }
+  catch(e) { return false; }
+}
+
+function hasBoardProgress() {
+  return cells.some(function(c){ return !!c; }) || gridSize > 35;
+}
+
+function markBoardChangedForSavePrompt() {
+  savePromptPending = true;
+  maybeShowSavePromptSoon();
+}
+
+function maybeShowSavePromptSoon() {
+  clearTimeout(savePromptTimer);
+  savePromptTimer = setTimeout(showSavePromptModal, 450);
+}
+
+function showSavePromptModal() {
+  if (!apiOnline || !savePromptPending || hasSavePromptBeenSeen() || !hasBoardProgress()) return;
+  var modal = document.getElementById('savePromptModal');
+  if (!modal) return;
+  var saveModal = document.getElementById('saveModal');
+  var loadModal = document.getElementById('loadModal');
+  if ((saveModal && saveModal.style.display === 'flex') || (loadModal && loadModal.style.display === 'flex')) {
+    maybeShowSavePromptSoon();
+    return;
+  }
+  var action = document.getElementById('savePromptAction');
+  if (action) action.textContent = getAllSlots().length ? '選擇角色存檔' : '建立角色並存檔';
+  modal.style.display = 'flex';
+  markSavePromptSeen();
+}
+
+function closeSavePromptModal() {
+  var modal = document.getElementById('savePromptModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function acceptSavePrompt() {
+  closeSavePromptModal();
+  openSaveModal();
 }
 
 // ── Load Modal ────────────────────────────────────────────────────────────────
@@ -2744,6 +2800,7 @@ document.getElementById('pmOk').onclick=function(){
   document.getElementById('placeModal').style.display='none';
   pendingIdx=null;
   updateAll();
+  markBoardChangedForSavePrompt();
   toast(selShop.patterns[pi]+' '+name+' 加入你的草地！');
 };
 
@@ -2764,7 +2821,7 @@ document.getElementById('rmDo').onclick=function(){
   if(c.id==='pond'){for(var i=0;i<cells.length;i++){if(cells[i]&&cells[i].water&&cells[i].tr>0)cells[i]=null;}}
   cells[rmIdx]=null;coins+=refund;
   document.getElementById('rmModal').style.display='none';rmIdx=null;
-  updateAll();toast('已移除 '+c.name+'，退還 🪙'+refund);
+  updateAll();markBoardChangedForSavePrompt();toast('已移除 '+c.name+'，退還 🪙'+refund);
 };
 document.getElementById('placeModal').onclick=function(e){if(e.target===this){this.style.display='none';pendingIdx=null;}};
 document.getElementById('rmModal').onclick=function(e){if(e.target===this){this.style.display='none';rmIdx=null;}};
@@ -2924,6 +2981,7 @@ function renderUpgrades(){
       u.effect();
       renderUpgrades();
       document.getElementById('coinVal').textContent=Math.floor(coins);
+      markBoardChangedForSavePrompt();
       toast('🎉 升級完成：'+u.name+'！');
     };
   });
@@ -3103,7 +3161,7 @@ function openRm(idx){
     if(c.id==='pond'){for(var i=0;i<cells.length;i++){if(cells[i]&&cells[i].water&&cells[i].tr>0)cells[i]=null;}}
     cells[rmIdx]=null; coins+=refund;
     document.getElementById('infoModal').style.display='none'; rmIdx=null;
-    updateAll(); toast('已移除 '+c.name+'，退還 🪙'+refund);
+    updateAll(); markBoardChangedForSavePrompt(); toast('已移除 '+c.name+'，退還 🪙'+refund);
   };
   document.getElementById('infoModal').style.display='flex';
 }
@@ -3326,6 +3384,7 @@ function useMarketItem(id){
     obj.name=src.name+'(複製)';
     cells[dst]=obj;
     updateAll();
+    markBoardChangedForSavePrompt();
     toast('🧬 '+src.name+' 已複製到空格！');
   }
 }
@@ -3408,6 +3467,7 @@ document.getElementById('pmOk').onclick=function(){
   document.getElementById('placeModal').style.display='none';
   pendingIdx=null;
   updateAll();
+  markBoardChangedForSavePrompt();
   addLog('🌱 放置了 '+obj.dEmoji+' '+name,'good');
   toast(selShop.patterns[pi]+' '+name+' 加入你的草地！');
 };
@@ -3600,6 +3660,20 @@ document.body.insertAdjacentHTML('beforeend', [
         '<button onclick="document.getElementById(\'saveModal\').style.display=\'none\'" style="font-size:18px;background:none;border:none;cursor:pointer;color:var(--text2)">✕</button>',
       '</div>',
       '<div id="saveModalContent"></div>',
+    '</div>',
+  '</div>',
+  // Save Prompt Modal
+  '<div id="savePromptModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9998;align-items:center;justify-content:center" onclick="if(event.target===this)closeSavePromptModal()">',
+    '<div style="background:var(--bg);border-radius:16px;padding:20px 20px 18px;width:330px;max-width:90vw;box-shadow:0 8px 40px rgba(0,0,0,.22);border:1.5px solid var(--border)">',
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px">',
+        '<div style="font-weight:900;font-size:16px;color:var(--text)">要保存這個生態系嗎？</div>',
+        '<button onclick="closeSavePromptModal()" style="font-size:18px;line-height:1;background:none;border:none;cursor:pointer;color:var(--text2)">✕</button>',
+      '</div>',
+      '<div style="font-size:12px;line-height:1.65;color:var(--text2);margin-bottom:14px">你已經開始建立盤面。建立角色並設定密碼後，就可以把目前進度存到雲端，下次直接讀取。</div>',
+      '<div style="display:flex;gap:8px;justify-content:flex-end">',
+        '<button onclick="closeSavePromptModal()" style="font-size:11px;font-weight:800;padding:6px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer">稍後</button>',
+        '<button id="savePromptAction" onclick="acceptSavePrompt()" style="font-size:11px;font-weight:900;padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer">建立角色並存檔</button>',
+      '</div>',
     '</div>',
   '</div>',
   // Load Modal
